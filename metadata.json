@@ -1,0 +1,6 @@
+{
+  "name": "Streamlit 보험 소식지 보드",
+  "description": "구글 드라이브와 연동하여 생명보험 및 손해보험 PDF 소식지를 조회하고 즉시 읽을 수 있는 Streamlit 스타일의 인터랙티브 대시보드입니다.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
