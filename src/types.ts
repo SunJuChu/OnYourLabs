@@ -16,7 +16,7 @@ export interface NewsletterSummary {
 export interface Newsletter {
   id: string;
   name: string;
-  folder: '생명보험' | '손해보험';
+  folder: '생명보험' | '손해보험' | '교육자료';
   insurer: string;
   publishMonth: string;
   size: string;

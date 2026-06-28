@@ -11,8 +11,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const nonLifeFolderId = "1yCQk2lX1-gxLelzpCkgBt10MrzLHD1qy";
 
     const filesList: any[] = [];
+    let hasEduFolder = false;
 
-    const fetchFilesFromFolder = async (folderId: string, category: "생명보험" | "손해보험") => {
+    const findFolderByName = async (folderName: string): Promise<string | null> => {
+      const q = `name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+      const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&pageSize=10`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      if (!response.ok) return null;
+      const data: any = await response.json();
+      if (data.files && data.files.length > 0) return data.files[0].id;
+      return null;
+    };
+
+    const fetchFilesFromFolder = async (folderId: string, category: "생명보험" | "손해보험" | "교육자료") => {
       const q = `'${folderId}' in parents and mimeType = 'application/pdf' and trashed = false`;
       const response = await fetch(
         `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,size,modifiedTime)&pageSize=100`,
@@ -27,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const data: any = await response.json();
       if (data.files && data.files.length > 0) {
         for (const file of data.files) {
-          let insurer = category === "생명보험" ? "기타 생보사" : "기타 손보사";
+          let insurer = category === "생명보험" ? "기타 생보사" : category === "손해보험" ? "기타 손보사" : "교육자료";
           const nameLower = file.name.toLowerCase();
 
           if (nameLower.includes("삼성")) insurer = category === "생명보험" ? "삼성생명" : "삼성화재";
@@ -84,10 +97,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await fetchFilesFromFolder(lifeFolderId, "생명보험");
     await fetchFilesFromFolder(nonLifeFolderId, "손해보험");
 
+    const eduFolderId = await findFolderByName("교육자료");
+    if (eduFolderId) {
+      hasEduFolder = true;
+      await fetchFilesFromFolder(eduFolderId, "교육자료");
+    }
+
     res.json({
       success: true,
       hasLifeFolder: true,
       hasNonLifeFolder: true,
+      hasEduFolder,
       lifeFolderId,
       nonLifeFolderId,
       files: filesList

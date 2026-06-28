@@ -58,11 +58,12 @@ export default function App() {
   const [driveFiles, setDriveFiles] = useState<Newsletter[]>([]);
   const [hasLifeFolder, setHasLifeFolder] = useState(false);
   const [hasNonLifeFolder, setHasNonLifeFolder] = useState(false);
+  const [hasEduFolder, setHasEduFolder] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   // General Filter States
-  const [selectedCategory, setSelectedCategory] = useState<'all' | '생명보험' | '손해보험'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | '생명보험' | '손해보험' | '교육자료'>('all');
   const [selectedInsurer, setSelectedInsurer] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   
@@ -199,6 +200,7 @@ export default function App() {
         setDriveFiles(data.files || []);
         setHasLifeFolder(data.hasLifeFolder);
         setHasNonLifeFolder(data.hasNonLifeFolder);
+        setHasEduFolder(data.hasEduFolder || false);
         
         // Auto select first file if current selection is invalid
         if (data.files && data.files.length > 0) {
@@ -257,6 +259,7 @@ export default function App() {
     setDriveFiles([]);
     setHasLifeFolder(false);
     setHasNonLifeFolder(false);
+    setHasEduFolder(false);
     sessionStorage.removeItem('STREAMLIT_GOOGLE_ACCESS_TOKEN');
   };
 
@@ -322,11 +325,13 @@ export default function App() {
     const totalCount = filteredFiles.length;
     const lifeCount = filteredFiles.filter(f => f.folder === '생명보험').length;
     const nonLifeCount = filteredFiles.filter(f => f.folder === '손해보험').length;
+    const eduCount = filteredFiles.filter(f => f.folder === '교육자료').length;
     const isDriveActive = mode === 'drive' && googleAccessToken !== null;
     return {
       total: totalCount,
       life: lifeCount,
       nonLife: nonLifeCount,
+      edu: eduCount,
       account: isDriveActive ? googleUser?.email || googleUser?.name || '드라이브 연동' : '데모 사용자'
     };
   }, [filteredFiles, mode, googleAccessToken, googleUser]);
@@ -350,6 +355,7 @@ export default function App() {
         insurersList={insurersList}
         hasLifeFolder={hasLifeFolder}
         hasNonLifeFolder={hasNonLifeFolder}
+        hasEduFolder={hasEduFolder}
         refreshing={refreshing}
         onRefresh={() => googleAccessToken && loadDriveFiles(googleAccessToken)}
       />
@@ -516,7 +522,7 @@ export default function App() {
           </div>
 
           {/* 3. Metrics Row (Exactly resembling st.metric) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <MetricCard
               label="총 소식지 파일"
               value={`${metrics.total}개`}
@@ -537,6 +543,13 @@ export default function App() {
               delta={mode === 'drive' ? '-' : '+1'}
               deltaType={mode === 'drive' ? 'neutral' : 'increase'}
               icon={<FolderOpen className="w-4 h-4 text-slate-400" />}
+            />
+            <MetricCard
+              label="📚 교육자료"
+              value={`${metrics.edu}개`}
+              delta={mode === 'drive' ? '-' : '-'}
+              deltaType="neutral"
+              icon={<ArrowRight className="w-4 h-4 text-slate-400" />}
             />
             <MetricCard
               label="활성 세션 계정"

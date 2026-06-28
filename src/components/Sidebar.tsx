@@ -23,8 +23,8 @@ interface SidebarProps {
   googleUser: GoogleUser | null;
   onGoogleSignIn: () => void;
   onGoogleSignOut: () => void;
-  selectedCategory: 'all' | '생명보험' | '손해보험';
-  setSelectedCategory: (cat: 'all' | '생명보험' | '손해보험') => void;
+  selectedCategory: 'all' | '생명보험' | '손해보험' | '교육자료';
+  setSelectedCategory: (cat: 'all' | '생명보험' | '손해보험' | '교육자료') => void;
   selectedInsurer: string;
   setSelectedInsurer: (insurer: string) => void;
   searchTerm: string;
@@ -32,6 +32,7 @@ interface SidebarProps {
   insurersList: string[];
   hasLifeFolder: boolean;
   hasNonLifeFolder: boolean;
+  hasEduFolder: boolean;
   refreshing: boolean;
   onRefresh: () => void;
 }
@@ -51,6 +52,7 @@ export default function Sidebar({
   insurersList,
   hasLifeFolder,
   hasNonLifeFolder,
+  hasEduFolder,
   refreshing,
   onRefresh,
 }: SidebarProps) {
@@ -176,6 +178,12 @@ export default function Sidebar({
                       {hasNonLifeFolder ? "확인됨" : "미발견"}
                     </span>
                   </div>
+                  <div className="flex justify-between">
+                    <span>📚 교육자료 폴더:</span>
+                    <span className={hasEduFolder ? "text-emerald-600 font-bold" : "text-amber-500 font-bold"}>
+                      {hasEduFolder ? "확인됨" : "미발견"}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex gap-1.5">
@@ -252,6 +260,7 @@ export default function Sidebar({
               <option value="all">📁 전체 영역 보기 (All)</option>
               <option value="생명보험">🧬 생명보험 (Life)</option>
               <option value="손해보험">🛡️ 손해보험 (Non-Life)</option>
+              <option value="교육자료">📚 교육자료 (Education)</option>
             </select>
           </div>
 
@@ -432,7 +441,7 @@ export default function Sidebar({
               <p className="font-bold text-[#FF4B4B]">📁 내 드라이브 연동 구조:</p>
               <ol className="list-decimal pl-4 space-y-1.5 text-slate-300">
                 <li>
-                  구글 드라이브 최상위에 <strong className="text-white">생명보험</strong>과 <strong className="text-white">손해보험</strong> 폴더를 만듭니다.
+                  구글 드라이브에 <strong className="text-white">생명보험</strong>, <strong className="text-white">손해보험</strong>, <strong className="text-white">교육자료</strong> 폴더를 만듭니다.
                 </li>
                 <li>
                   그 아래에 각 보험사 월간 PDF 안내자료를 업로드합니다.
