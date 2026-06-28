@@ -7,9 +7,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const lifeFolderId = "1nZLxDmT9GvhFNccbpqP8aIeCa7AL0AqM";
-    const nonLifeFolderId = "1yCQk2lX1-gxLelzpCkgBt10MrzLHD1qy";
-
     const filesList: any[] = [];
     let hasEduFolder = false;
 
@@ -112,8 +109,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     };
 
-    await fetchFilesFromFolder(lifeFolderId, "생명보험");
-    await fetchFilesFromFolder(nonLifeFolderId, "손해보험");
+    const lifeFolderId = await findFolderByName("생명보험");
+    const hasLifeFolder = !!lifeFolderId;
+    if (lifeFolderId) await fetchFilesFromFolder(lifeFolderId, "생명보험");
+
+    const nonLifeFolderId = await findFolderByName("손해보험");
+    const hasNonLifeFolder = !!nonLifeFolderId;
+    if (nonLifeFolderId) await fetchFilesFromFolder(nonLifeFolderId, "손해보험");
 
     const eduFolderId = await findFolderByName("교육자료");
     if (eduFolderId) {
@@ -123,11 +125,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.json({
       success: true,
-      hasLifeFolder: true,
-      hasNonLifeFolder: true,
+      hasLifeFolder,
+      hasNonLifeFolder,
       hasEduFolder,
-      lifeFolderId,
-      nonLifeFolderId,
       files: filesList
     });
 
