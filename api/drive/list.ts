@@ -15,8 +15,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const findFolderByName = async (folderName: string): Promise<string | null> => {
       const q = `name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+      // includeItemsFromAllDrives + supportsAllDrives 로 공유 폴더(Shared with me)까지 검색
+      const params = new URLSearchParams({
+        q,
+        fields: 'files(id,name)',
+        pageSize: '10',
+        includeItemsFromAllDrives: 'true',
+        supportsAllDrives: 'true',
+      });
       const response = await fetch(
-        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&pageSize=10`,
+        `https://www.googleapis.com/drive/v3/files?${params}`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       if (!response.ok) return null;
@@ -27,8 +35,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const fetchFilesFromFolder = async (folderId: string, category: "생명보험" | "손해보험" | "교육자료") => {
       const q = `'${folderId}' in parents and mimeType = 'application/pdf' and trashed = false`;
+      const params = new URLSearchParams({
+        q,
+        fields: 'files(id,name,size,modifiedTime)',
+        pageSize: '100',
+        includeItemsFromAllDrives: 'true',
+        supportsAllDrives: 'true',
+      });
       const response = await fetch(
-        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,size,modifiedTime)&pageSize=100`,
+        `https://www.googleapis.com/drive/v3/files?${params}`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
