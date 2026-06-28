@@ -193,6 +193,11 @@ export default function App() {
       const res = await fetch(`/api/drive/list?accessToken=${encodeURIComponent(token)}`);
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
+        if (res.status === 401 || errJson.error === 'TOKEN_EXPIRED') {
+          // 토큰 만료 - 자동 로그아웃 후 재로그인 유도
+          handleGoogleSignOut();
+          throw new Error('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.');
+        }
         throw new Error(errJson.error || `HTTP ${res.status}오류`);
       }
       const data = await res.json();

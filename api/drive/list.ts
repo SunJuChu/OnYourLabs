@@ -48,6 +48,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('TOKEN_EXPIRED');
+        }
         const errBody = await response.text();
         throw new Error(`폴더 내 파일 목록 조회 실패: ${response.statusText} (${errBody})`);
       }
@@ -130,6 +133,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (err: any) {
     console.error("구글 드라이브 파일 탐색 오류:", err);
+    if (err.message === 'TOKEN_EXPIRED') {
+      return res.status(401).json({ error: 'TOKEN_EXPIRED', message: '구글 로그인 세션이 만료되었습니다. 다시 로그인해 주세요.' });
+    }
     res.status(500).json({ error: err.message || "구글 드라이브 파일 목록을 조회하지 못했습니다." });
   }
 }
