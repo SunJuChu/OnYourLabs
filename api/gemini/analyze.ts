@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { GoogleGenAI, Type } from "@google/genai";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -111,7 +112,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error("GEMINI_API_KEY 환경 변수가 설정되어 있지 않습니다.");
     }
 
-    const { GoogleGenAI, Type } = await import("@google/genai");
     const ai = new GoogleGenAI({ apiKey: geminiKey });
 
     const responseSchema = {
