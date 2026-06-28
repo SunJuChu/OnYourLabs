@@ -96,7 +96,8 @@ export default function App() {
       });
 
       if (!response.ok) {
-        throw new Error(`AI 분석 서버 연동 실패 (HTTP ${response.status})`);
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || `AI 분석 서버 연동 실패 (HTTP ${response.status})`);
       }
 
       const data = await response.json();

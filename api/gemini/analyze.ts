@@ -170,10 +170,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.json({ success: true, analysis: parsedAnalysis });
 
   } catch (err: any) {
-    console.error("[Gemini AI Error]:", err);
+    console.error("[Gemini AI Error] name:", err?.name);
+    console.error("[Gemini AI Error] message:", err?.message);
+    console.error("[Gemini AI Error] stack:", err?.stack);
     res.status(500).json({
       success: false,
-      error: err.message || "인공지능 분석 처리 도중 서버 에러가 발생했습니다."
+      error: `[${err?.name || 'Error'}] ${err?.message || "인공지능 분석 처리 도중 서버 에러가 발생했습니다."}`
     });
   }
 }
