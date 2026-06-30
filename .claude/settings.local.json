@@ -9,7 +9,10 @@
       "Bash(git remote *)",
       "Bash(git fetch *)",
       "Bash(git checkout *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(cd \"/c/Users/박노언/OneDrive/바탕 화면/소식지\" && grep -rn \"GOOGLE_CLIENT_ID\\\\|client_id\" --include=\"*.env*\" --include=\"*.json\" --include=\"*.js\" --include=\"*.ts\" -l . 2>/dev/null | grep -v node_modules)"
     ]
   }
 }

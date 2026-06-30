@@ -209,7 +209,7 @@ export default function Sidebar({
                   구글 클라우드 보안 토큰을 활용해 생명보험 및 손해보험 폴더의 PDF 파일에 접근합니다.
                 </p>
                 <button
-                  onClick={onGoogleSignIn}
+                  onClick={() => onGoogleSignIn()}
                   className="w-full bg-[#FF4B4B] hover:bg-red-600 text-white py-2.5 px-3 rounded-xl text-xs font-bold items-center justify-center gap-2 flex transition cursor-pointer shadow-md shadow-red-100"
                 >
                   <svg className="w-4 h-4 text-white" viewBox="0 0 48 48">

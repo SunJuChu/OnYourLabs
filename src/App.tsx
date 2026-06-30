@@ -445,7 +445,7 @@ export default function App() {
             <div className="flex gap-2 shrink-0">
               {customClientId ? (
                 <button
-                  onClick={handleGoogleSignIn}
+                  onClick={() => handleGoogleSignIn()}
                   className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs py-2 px-4 rounded-xl transition shadow-sm cursor-pointer"
                 >
                   지금 연동 로그인
