@@ -496,11 +496,11 @@ export default function App() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
             <div>
               <h1 className="text-xl font-black text-slate-800 leading-tight select-none">
-                {mode === 'drive' ? '📁 구글 드라이브 동기화 소식지 리서치보드' : '✨ 보험사 월간 핵심 소식지 분석 대시보드'}
+                {mode === 'drive' ? '📋 보험사 소식지 리서치보드' : '✨ 보험사 월간 핵심 소식지 분석 대시보드'}
               </h1>
               <p className="text-xs text-slate-400 mt-1 font-semibold">
-                {mode === 'drive' 
-                  ? '구글 드라이브 클라우드 폴더로부터 실시간으로 수집 가공된 최신 뉴스레터 솔루션입니다.' 
+                {mode === 'drive'
+                  ? '실시간 연동된 최신 생명·손해보험 소식지를 한눈에 분석하고 영업에 활용하세요.'
                   : '등록된 최신 생명보험 및 손해보험 월간 개정 이슈 일람과 주력 상품에 최적화된 마케팅 기법을 한데 모았습니다.'}
               </p>
             </div>
