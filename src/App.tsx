@@ -370,13 +370,13 @@ export default function App() {
       <main className="flex-1 overflow-y-auto flex flex-col h-full focus:outline-none">
         
         {/* Top Floating Color Strip mimicking Streamlit */}
-        <div className="h-1 w-full bg-gradient-to-r from-[#ff4b4b] via-[#ff6a6a] to-[#ff4b4b] shrink-0" />
+        <div className="h-1 w-full bg-gradient-to-r from-[#0d2461] via-[#0abde3] to-[#0d2461] shrink-0" />
 
         {/* Global Banner and Setup Dialog */}
         {isConfiguringClientId && (
-          <div className="m-6 p-6 bg-red-50/50 border border-red-200/60 rounded-3xl shadow-sm space-y-4 animate-fade-in">
+          <div className="m-6 p-6 bg-cyan-50/50 border border-cyan-200/60 rounded-3xl shadow-sm space-y-4 animate-fade-in">
             <div className="flex items-start gap-3">
-              <Settings className="w-5 h-5 text-[#ff4b4b] shrink-0 mt-0.5" />
+              <Settings className="w-5 h-5 text-[#0891b2] shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <h3 className="text-xs font-black text-slate-900">OAuth 크리덴셜 ID 설정 장치</h3>
                 <p className="text-[11px] text-slate-650 leading-relaxed font-medium">
@@ -385,14 +385,14 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-3 items-end max-w-2xl bg-white p-3.5 rounded-2xl border border-red-100">
+            <div className="flex flex-col md:flex-row gap-3 items-end max-w-2xl bg-white p-3.5 rounded-2xl border border-cyan-100">
               <div className="flex-1 space-y-1">
                 <label className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Input OAuth Client ID:</label>
                 <input
                   type="text"
                   placeholder="예: 123456789-abcdefg.apps.googleusercontent.com"
                   defaultValue={customClientId}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-red-400 rounded-xl px-3 py-2 text-xs focus:outline-none text-gray-850 focus:ring-1 focus:ring-red-400 transition"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-[#0abde3] rounded-xl px-3 py-2 text-xs focus:outline-none text-gray-850 focus:ring-1 focus:ring-[#0abde3] transition"
                   id="client-id-input"
                 />
               </div>
@@ -406,7 +406,7 @@ export default function App() {
                       alert("유효한 클라이언트 ID를 기입해 주십시오.");
                     }
                   }}
-                  className="bg-[#ff4b4b] hover:bg-red-650 text-white font-extrabold text-xs py-2 px-4 rounded-xl transition cursor-pointer shadow-sm shadow-red-105"
+                  className="bg-[#0abde3] hover:bg-[#0891b2] text-white font-extrabold text-xs py-2 px-4 rounded-xl transition cursor-pointer shadow-sm shadow-red-105"
                 >
                   저장 및 활성화
                 </button>
@@ -419,9 +419,9 @@ export default function App() {
               </div>
             </div>
 
-            <div className="text-[10px] text-slate-500 leading-relaxed bg-red-100/30 p-4 rounded-2xl font-sans space-y-1">
-              <p className="font-bold text-red-700">💡 발급방법 요약:</p>
-              <p>1. <a href="https://console.cloud.google.com" target="_blank" className="text-red-500 underline font-extrabold">구글 클라우드 콘솔</a> 방문 후 프로젝트 생성</p>
+            <div className="text-[10px] text-slate-500 leading-relaxed bg-cyan-50/50 p-4 rounded-2xl font-sans space-y-1">
+              <p className="font-bold text-[#0d2461]">💡 발급방법 요약:</p>
+              <p>1. <a href="https://console.cloud.google.com" target="_blank" className="text-[#0891b2] underline font-extrabold">구글 클라우드 콘솔</a> 방문 후 프로젝트 생성</p>
               <p>2. 'OAuth 동의 화면'에서 앱 유형 외부 지정 후 `https://www.googleapis.com/auth/drive.readonly` 스코프 추가</p>
               <p>3. '사용자 인증 정보' 생성에서 **OAuth 클라이언트 ID (웹 애플리케이션)** 발급</p>
               <p>4. 승인된 리디렉션 URI에 현재 앱 도메인 주소(<span className="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-800">{window.location.origin}</span>)를 정확히 등록해 주십시오.</p>
@@ -453,7 +453,7 @@ export default function App() {
               ) : (
                 <button
                   onClick={() => setIsConfiguringClientId(true)}
-                  className="bg-[#ff4b4b] hover:bg-red-600 text-white font-extrabold text-xs py-2 px-4 rounded-xl transition shadow-sm cursor-pointer shadow-red-100"
+                  className="bg-[#0abde3] hover:bg-[#0891b2] text-white font-extrabold text-xs py-2 px-4 rounded-xl transition shadow-sm cursor-pointer shadow-cyan-100"
                 >
                   OAuth 클라이언트 ID 키 등록 장치 열기
                 </button>
@@ -468,7 +468,7 @@ export default function App() {
             <span className="truncate max-w-lg">🔑 등록된 클라이언트 ID: <span className="font-mono bg-white border border-slate-200 p-0.5 rounded text-slate-650">{customClientId}</span></span>
             <button 
               onClick={() => setIsConfiguringClientId(true)} 
-              className="text-[#ff4b4b] hover:underline font-extrabold cursor-pointer"
+              className="text-[#0891b2] hover:underline font-extrabold cursor-pointer"
             >
               ID 변경
             </button>
@@ -562,7 +562,7 @@ export default function App() {
               value={metrics.account}
               delta={mode === 'drive' ? '구글 연결중' : '로컬 오프라인'}
               deltaType="neutral"
-              icon={<Sparkles className="w-4 h-4 text-[#ff4b4b]" />}
+              icon={<Sparkles className="w-4 h-4 text-[#0891b2]" />}
             />
           </div>
 
@@ -577,7 +577,7 @@ export default function App() {
                   소식지 문서 파일 목록 ({filteredFiles.length}개 발견)
                 </h3>
                 {searchTerm && (
-                  <span className="text-[9px] bg-red-100 text-[#ff4b4b] px-2.5 py-0.5 rounded-full font-extrabold tracking-wide">
+                  <span className="text-[9px] bg-cyan-100 text-[#0891b2] px-2.5 py-0.5 rounded-full font-extrabold tracking-wide">
                     필터링 활성
                   </span>
                 )}
@@ -615,7 +615,7 @@ export default function App() {
                         onClick={() => setSelectedFileId(file.id)}
                         className={`p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer flex justify-between gap-3 select-none ${
                           isSelected
-                            ? 'bg-red-50/30 border-[#ff4b4b] shadow-xs scale-[1.01]'
+                            ? 'bg-cyan-50/30 border-[#0abde3] shadow-xs scale-[1.01]'
                             : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs hover:bg-slate-50/40'
                         }`}
                       >
@@ -624,7 +624,7 @@ export default function App() {
                             {file.insurer} · {file.publishMonth}
                           </p>
                           <h4 className={`text-xs font-extrabold truncate leading-tight ${
-                            isSelected ? 'text-[#ff4b4b]' : 'text-slate-800'
+                            isSelected ? 'text-[#0891b2]' : 'text-slate-800'
                           }`}>
                             {file.name}
                           </h4>
@@ -638,9 +638,9 @@ export default function App() {
 
                         <div className="flex flex-col justify-between items-end">
                           <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${
-                            isSelected ? 'text-[#ff4b4b] translate-x-1' : 'text-slate-400'
+                            isSelected ? 'text-[#0891b2] translate-x-1' : 'text-slate-400'
                           }`} />
-                          <span className="text-[8px] text-[#FF4B4B] font-mono shrink-0">
+                          <span className="text-[8px] text-[#0891b2] font-mono shrink-0">
                             {file.modifiedTime.split(' ')[0]}
                           </span>
                         </div>

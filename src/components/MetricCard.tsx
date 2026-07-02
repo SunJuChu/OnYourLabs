@@ -17,7 +17,7 @@ export default function MetricCard({ label, value, delta, deltaType = 'neutral',
           <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block font-sans">
             {label}
           </span>
-          {icon && <div className="text-slate-300 group-hover:text-[#ff4b4b] transition-colors duration-300">{icon}</div>}
+          {icon && <div className="text-slate-300 group-hover:text-[#0abde3] transition-colors duration-300">{icon}</div>}
         </div>
         <div className="flex items-baseline gap-2 mt-1">
           <span className="text-3xl lg:text-4xl font-black text-slate-800 tracking-tight leading-none">

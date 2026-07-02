@@ -75,22 +75,25 @@ export default function Sidebar({
   ];
 
   return (
-    <aside className="w-80 bg-slate-100/95 text-slate-800 border-r border-slate-200/80 flex flex-col h-full overflow-y-auto select-none font-sans">
-      {/* Streamlit Brand Title */}
-      <div className="p-6 border-b border-slate-200/80 flex flex-col gap-1.5 bg-slate-100/40">
+    <aside className="w-80 bg-slate-50 text-slate-800 border-r border-slate-200/60 flex flex-col h-full overflow-y-auto select-none font-sans">
+      {/* OnYourLabs Brand Header */}
+      <div className="px-5 py-5 border-b border-[#1a4a9e]/20 flex flex-col gap-1.5 bg-[#0d2461]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#FF4B4B] rounded-lg flex items-center justify-center shrink-0 shadow-sm shadow-red-200">
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-9 h-9 bg-gradient-to-br from-[#0abde3] to-[#0891b2] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-cyan-900/30">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h1 className="text-base font-extrabold tracking-tight text-slate-800">
-            Insurance PDF Explorer
-          </h1>
+          <div>
+            <h1 className="text-sm font-black tracking-tight text-white leading-tight">
+              OnYourLabs
+            </h1>
+            <p className="text-[10px] text-[#0abde3] font-semibold">Insurance PDF Explorer</p>
+          </div>
         </div>
-        <div className="flex items-center justify-between mt-1 text-[10px] font-mono text-slate-400">
-          <span>Streamlit Engine</span>
-          <span>v1.34.0 (포털 전용)</span>
+        <div className="flex items-center justify-between mt-1 text-[9px] font-mono text-white/30">
+          <span>Analysis & Future Research</span>
+          <span className="text-[#f59e0b]/70">v2.0 포털</span>
         </div>
       </div>
 
@@ -105,7 +108,7 @@ export default function Sidebar({
               onClick={() => setMode('demo')}
               className={`py-1.5 text-xs font-bold rounded-lg transition px-2 text-center cursor-pointer ${
                 mode === 'demo'
-                  ? 'bg-white text-[#FF4B4B] shadow-xs'
+                  ? 'bg-white text-[#0891b2] shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -115,7 +118,7 @@ export default function Sidebar({
               onClick={() => setMode('drive')}
               className={`py-1.5 text-xs font-bold rounded-lg transition px-2 text-center cursor-pointer ${
                 mode === 'drive'
-                  ? 'bg-white text-[#FF4B4B] shadow-xs'
+                  ? 'bg-white text-[#0891b2] shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -210,7 +213,7 @@ export default function Sidebar({
                 </p>
                 <button
                   onClick={() => onGoogleSignIn()}
-                  className="w-full bg-[#FF4B4B] hover:bg-red-600 text-white py-2.5 px-3 rounded-xl text-xs font-bold items-center justify-center gap-2 flex transition cursor-pointer shadow-md shadow-red-100"
+                  className="w-full bg-gradient-to-r from-[#0d2461] to-[#0abde3] hover:from-[#0a1e52] hover:to-[#0891b2] text-white py-2.5 px-3 rounded-xl text-xs font-bold items-center justify-center gap-2 flex transition cursor-pointer shadow-md shadow-cyan-200"
                 >
                   <svg className="w-4 h-4 text-white" viewBox="0 0 48 48">
                     <path fill="currentColor" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
@@ -242,7 +245,7 @@ export default function Sidebar({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="예: 삼성생명, 5월..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-red-400 focus:bg-white transition"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0abde3] focus:bg-white transition"
             />
           </div>
 
@@ -287,7 +290,7 @@ export default function Sidebar({
         <div className="bg-white border border-slate-200 rounded-2xl p-4.5 space-y-3 shadow-sm" id="kcd-helper-widget">
           <div className="flex items-center justify-between border-b border-rose-50 pb-2">
             <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-              <Stethoscope className="w-4 h-4 text-[#FF4B4B]" />
+              <Stethoscope className="w-4 h-4 text-[#0891b2]" />
               🩺 KCD-8 질병코드 연동기
             </span>
             <button
@@ -308,12 +311,12 @@ export default function Sidebar({
               href="https://www.koicd.kr/kcd/kcd.do?degree=08"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between bg-slate-50 hover:bg-slate-100 p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 transition text-[#FF4B4B] cursor-pointer"
+              className="flex items-center justify-between bg-slate-50 hover:bg-slate-100 p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 transition text-[#0891b2] cursor-pointer"
             >
               <span className="text-[11px] font-extrabold text-slate-700 flex items-center gap-1">
                 KCD-8차 공식 포털 바로가기
               </span>
-              <ExternalLink className="w-3.5 h-3.5 text-[#FF4B4B]" />
+              <ExternalLink className="w-3.5 h-3.5 text-[#0891b2]" />
             </a>
 
             {/* Simulated Search & Outer Portal Action */}
@@ -338,7 +341,7 @@ export default function Sidebar({
                     const searchUrl = `https://www.koicd.kr/kcd/kcd.do?degree=08&searchWord=${encodeURIComponent(kcdSearchTerm.trim())}`;
                     window.open(searchUrl, '_blank');
                   }}
-                  className="bg-[#FF4B4B] hover:bg-red-600 text-white font-extrabold px-3 py-1 rounded-lg text-xs transition cursor-pointer shrink-0"
+                  className="bg-[#0abde3] hover:bg-[#0891b2] text-white font-extrabold px-3 py-1 rounded-lg text-xs transition cursor-pointer shrink-0"
                 >
                   포털 검색
                 </button>
@@ -349,10 +352,10 @@ export default function Sidebar({
             <div className="space-y-2 bg-slate-50/50 p-3 rounded-xl border border-slate-150">
               <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
                 <span className="text-[10px] font-black text-slate-500 flex items-center gap-1.5 select-none">
-                  <Bookmark className="w-3 h-3 text-[#FF4B4B]" />
+                  <Bookmark className="w-3 h-3 text-[#0891b2]" />
                   3대 질병 다빈도 담보 코드
                 </span>
-                <span className="text-[9px] text-[#FF4B4B] font-mono font-bold uppercase font-bold">kcd-8차</span>
+                <span className="text-[9px] text-[#0891b2] font-mono font-bold uppercase font-bold">kcd-8차</span>
               </div>
 
               {/* Category mini Tabs */}
@@ -363,7 +366,7 @@ export default function Sidebar({
                     onClick={() => setActiveKcdCategory(cat)}
                     className={`text-[9px] font-black py-0.5 rounded transition cursor-pointer ${
                       activeKcdCategory === cat
-                        ? 'bg-[#FF4B4B] text-white font-bold'
+                        ? 'bg-[#0abde3] text-white font-bold'
                         : 'text-slate-400 hover:text-slate-700 font-bold'
                     }`}
                   >
@@ -384,13 +387,13 @@ export default function Sidebar({
                         const searchUrl = `https://www.koicd.kr/kcd/kcd.do?degree=08&searchWord=${item.code}`;
                         window.open(searchUrl, '_blank');
                       }}
-                      className="flex items-center justify-between p-1.5 bg-white border border-slate-100 rounded-lg hover:border-red-200 hover:bg-[#FF4B4B]/5 transition text-left cursor-pointer group"
+                      className="flex items-center justify-between p-1.5 bg-white border border-slate-100 rounded-lg hover:border-cyan-200 hover:bg-[#0abde3]/5 transition text-left cursor-pointer group"
                       title="클릭 시 공식 포털에서 원문 조회"
                     >
                       <div className="flex items-center gap-1.5 text-left">
                         <span className={`text-[9px] leading-none font-black px-1.5 py-0.5 rounded ${
                           item.type === 'cancer' ? 'bg-orange-50 text-orange-600' :
-                          item.type === 'brain' ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'
+                          item.type === 'brain' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
                         }`}>
                           {item.code}
                         </span>
@@ -398,7 +401,7 @@ export default function Sidebar({
                           {item.name}
                         </span>
                       </div>
-                      <ExternalLink className="w-2.5 h-2.5 text-slate-300 group-hover:text-[#FF4B4B] transition" />
+                      <ExternalLink className="w-2.5 h-2.5 text-slate-300 group-hover:text-[#0891b2] transition" />
                     </div>
                   ))}
               </div>
@@ -407,7 +410,7 @@ export default function Sidebar({
             {/* Extra Help section */}
             {showKcdHelper && (
               <div className="bg-slate-50 border border-slate-150 p-2.5 rounded-xl text-[10px] text-slate-500 leading-relaxed space-y-1.5 font-sans animate-fade-in text-left">
-                <p className="font-bold text-[#FF4B4B] flex items-center gap-1">
+                <p className="font-bold text-[#0891b2] flex items-center gap-1">
                   <span>💡</span> KCD 매칭 가이드:
                 </p>
                 <p>
@@ -427,10 +430,10 @@ export default function Sidebar({
         <div className="bg-[#262730] p-4.5 rounded-2xl shadow-md text-slate-200">
           <button
             onClick={() => setShowSetupHelp(!showSetupHelp)}
-            className="w-full flex items-center justify-between text-xs font-bold text-white hover:text-red-300 transition-colors py-1 cursor-pointer"
+            className="w-full flex items-center justify-between text-xs font-bold text-white hover:text-[#0abde3] transition-colors py-1 cursor-pointer"
           >
             <span className="flex items-center gap-1.5">
-              <HelpCircle className="w-4 h-4 text-[#ff4b4b]" />
+              <HelpCircle className="w-4 h-4 text-[#0abde3]" />
               드라이브 폴더 가이드
             </span>
             <span className="text-[9px] font-mono bg-white/10 px-1.5 py-0.5 rounded">{showSetupHelp ? "닫기" : "보기"}</span>
@@ -438,7 +441,7 @@ export default function Sidebar({
           
           {showSetupHelp && (
             <div className="mt-3 text-[11px] text-slate-300 leading-relaxed space-y-2.5 font-sans border-t border-white/10 pt-3">
-              <p className="font-bold text-[#FF4B4B]">📁 내 드라이브 연동 구조:</p>
+              <p className="font-bold text-[#0891b2]">📁 내 드라이브 연동 구조:</p>
               <ol className="list-decimal pl-4 space-y-1.5 text-slate-300">
                 <li>
                   구글 드라이브에 <strong className="text-white">생명보험</strong>, <strong className="text-white">손해보험</strong>, <strong className="text-white">교육자료</strong> 폴더를 만듭니다.
@@ -458,13 +461,13 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Streamlit Custom Styled Footer */}
-      <div className="p-4 border-t border-slate-200 bg-slate-200/40 text-center">
-        <p className="text-[10px] text-slate-400 font-mono flex items-center justify-center gap-1">
-          Made with <span className="text-[#ff4b4b] animate-pulse">❤</span> Streamlit Bento Engine
+      {/* OnYourLabs Footer */}
+      <div className="p-4 border-t border-[#0d2461]/10 bg-[#0d2461] text-center">
+        <p className="text-[10px] text-white/40 font-mono flex items-center justify-center gap-1">
+          Made with <span className="text-[#0abde3] animate-pulse">❤</span> OnYourLabs
         </p>
-        <p className="text-[9px] text-slate-400">
-          Google Cloud Partner Authorized
+        <p className="text-[9px] text-white/30">
+          Analysis & Future Research
         </p>
       </div>
     </aside>

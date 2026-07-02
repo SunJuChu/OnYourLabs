@@ -39,7 +39,7 @@ export default function NewsletterDetail({
   if (!file) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-12 text-center text-slate-400 bg-white border border-slate-200 rounded-3xl shadow-sm min-h-[450px]">
-        <div className="w-16 h-16 bg-red-50/50 border border-red-100 flex items-center justify-center rounded-2xl text-[#FF4B4B] mb-4 animate-pulse">
+        <div className="w-16 h-16 bg-cyan-50/50 border border-cyan-100 flex items-center justify-center rounded-2xl text-[#0891b2] mb-4 animate-pulse">
           <BookOpen className="w-8 h-8" />
         </div>
         <h3 className="text-base font-extrabold text-slate-800">조회할 소식지를 선택해 주세요</h3>
@@ -72,16 +72,16 @@ export default function NewsletterDetail({
         <div className="flex-1 p-8 flex flex-col justify-center items-center text-center space-y-6">
           <div className="relative flex justify-center items-center">
             {/* Pulsing AI Energy Outer Ring */}
-            <div className="absolute w-24 h-24 rounded-full border border-[#FF4B4B]/30 animate-pulse"></div>
+            <div className="absolute w-24 h-24 rounded-full border border-[#0abde3]/30 animate-pulse"></div>
             {/* Spinning Hexagon Ring */}
-            <div className="w-16 h-16 bg-red-50 border border-[#FF4B4B]/20 flex items-center justify-center rounded-2xl text-[#FF4B4B] animate-spin [animation-duration:4s]">
-              <Cpu className="w-8 h-8 text-[#FF4B4B]" />
+            <div className="w-16 h-16 bg-cyan-50 border border-[#0abde3]/20 flex items-center justify-center rounded-2xl text-[#0891b2] animate-spin [animation-duration:4s]">
+              <Cpu className="w-8 h-8 text-[#0891b2]" />
             </div>
           </div>
 
           <div className="space-y-2.5 max-w-sm">
             <h3 className="text-sm font-black text-slate-800 flex items-center justify-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-[#FF4B4B] animate-bounce" />
+              <Sparkles className="w-4 h-4 text-[#0891b2] animate-bounce" />
               Gemini 3.5 Flash 실시간 심층 분석 중
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed font-semibold">
@@ -113,7 +113,7 @@ export default function NewsletterDetail({
 
         {/* Error Content */}
         <div className="flex-1 p-8 flex flex-col justify-center items-center text-center space-y-4">
-          <div className="w-14 h-14 bg-rose-50 border border-rose-100/80 rounded-2xl flex items-center justify-center text-[#FF4B4B] shadow-sm">
+          <div className="w-14 h-14 bg-rose-50 border border-rose-100/80 rounded-2xl flex items-center justify-center text-[#0891b2] shadow-sm">
             <XCircle className="w-7 h-7" />
           </div>
           <div className="space-y-1.5 max-w-sm">
@@ -167,7 +167,7 @@ export default function NewsletterDetail({
             </span>
             <span className="text-[10px] text-slate-400 font-mono">File ID: {file.id.substring(0, 10)}</span>
             {isRealtimeAnalyzed && (
-              <span className="flex items-center gap-1 text-[9px] font-black bg-rose-50 text-[#FF4B4B] border border-rose-150 rounded-full px-2 py-0.5 animate-pulse">
+              <span className="flex items-center gap-1 text-[9px] font-black bg-rose-50 text-[#0891b2] border border-rose-150 rounded-full px-2 py-0.5 animate-pulse">
                 <Sparkles className="w-2.5 h-2.5" />
                 Gemini 실시간 분석 완료
               </span>
@@ -196,7 +196,7 @@ export default function NewsletterDetail({
             download={file.name}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 bg-[#FF4B4B] hover:bg-red-600 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition shadow-md shadow-red-100 cursor-pointer"
+            className="flex items-center gap-1.5 bg-[#0abde3] hover:bg-[#0891b2] text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition shadow-md shadow-cyan-100 cursor-pointer"
           >
             <FileDown className="w-3.5 h-3.5" />
             <span>PDF 다운로드</span>
@@ -236,7 +236,7 @@ export default function NewsletterDetail({
           onClick={() => setActiveTab('summary')}
           className={`flex-1 py-2 text-xs font-extrabold text-center transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer rounded-xl ${
             activeTab === 'summary'
-              ? 'bg-white text-[#FF4B4B] shadow-xs border border-slate-200/40 font-black'
+              ? 'bg-white text-[#0891b2] shadow-xs border border-slate-200/40 font-black'
               : 'text-slate-450 hover:text-slate-800 hover:bg-white/40'
           }`}
         >
@@ -247,7 +247,7 @@ export default function NewsletterDetail({
           onClick={() => setActiveTab('pdf')}
           className={`flex-1 py-2 text-xs font-extrabold text-center transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer rounded-xl ${
             activeTab === 'pdf'
-              ? 'bg-white text-[#FF4B4B] shadow-xs border border-slate-200/40 font-black'
+              ? 'bg-white text-[#0891b2] shadow-xs border border-slate-200/40 font-black'
               : 'text-slate-450 hover:text-slate-800 hover:bg-white/40'
           }`}
         >
@@ -265,7 +265,7 @@ export default function NewsletterDetail({
             {!isRealtimeAnalyzed && (
               <div className="bg-rose-50/75 border border-rose-150 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm animate-fade-in mb-2">
                 <div className="flex items-start gap-3.5">
-                  <div className="w-10 h-10 bg-red-105 border border-red-200 flex items-center justify-center rounded-xl text-[#FF4B4B] shrink-0">
+                  <div className="w-10 h-10 bg-cyan-50 border border-cyan-200 flex items-center justify-center rounded-xl text-[#0891b2] shrink-0">
                     <Sparkles className="w-5 h-5 animate-pulse" />
                   </div>
                   <div className="space-y-1 text-left">
@@ -279,7 +279,7 @@ export default function NewsletterDetail({
                 </div>
                 <button
                   onClick={onTriggerAnalysis}
-                  className="shrink-0 flex items-center gap-1.5 bg-[#FF4B4B] hover:bg-red-600 text-white font-black px-4.5 py-2.5 rounded-xl text-xs transition shadow-md shadow-red-100 cursor-pointer"
+                  className="shrink-0 flex items-center gap-1.5 bg-[#0abde3] hover:bg-[#0891b2] text-white font-black px-4.5 py-2.5 rounded-xl text-xs transition shadow-md shadow-cyan-100 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5 animate-pulse" />
                   <span>실시간 AI 분석 실행하기</span>
@@ -288,7 +288,7 @@ export default function NewsletterDetail({
             )}
 
             {/* Streamlit Custom Alert Box: st.info() style */}
-            <div className="bg-slate-50 border-l-4 border-[#ff4b4b] rounded-r-2xl p-4.5 flex gap-3.5 text-sm text-slate-700">
+            <div className="bg-slate-50 border-l-4 border-[#0abde3] rounded-r-2xl p-4.5 flex gap-3.5 text-sm text-slate-700">
               <span className="text-xl mt-0.5">📢</span>
               <div className="space-y-1">
                 <p className="font-extrabold text-slate-900">{displaySummary.title}</p>
@@ -306,7 +306,7 @@ export default function NewsletterDetail({
               <ul className="bg-slate-50 border border-slate-100 rounded-2xl p-5 space-y-3 shadow-xs">
                 {displaySummary.highlights && displaySummary.highlights.map((hl, idx) => (
                   <li key={idx} className="text-xs text-slate-700 leading-relaxed flex gap-2">
-                    <span className="text-[#FF4B4B] font-extrabold font-mono font-bold">{(idx + 1).toString().padStart(2, '0')}.</span>
+                    <span className="text-[#0891b2] font-extrabold font-mono font-bold">{(idx + 1).toString().padStart(2, '0')}.</span>
                     <span>{hl}</span>
                   </li>
                 ))}
@@ -363,9 +363,9 @@ export default function NewsletterDetail({
             </div>
 
             {/* Sales Points */}
-            <div className="space-y-2.5 bg-red-50/30 p-5 rounded-2xl border border-red-100/50">
-              <h3 className="text-xs font-black text-[#FF4B4B] flex items-center gap-1.5 select-none">
-                <TrendingUp className="w-4 h-4 text-[#FF4B4B]" />
+            <div className="space-y-2.5 bg-cyan-50/30 p-5 rounded-2xl border border-cyan-100/50">
+              <h3 className="text-xs font-black text-[#0891b2] flex items-center gap-1.5 select-none">
+                <TrendingUp className="w-4 h-4 text-[#0891b2]" />
                 현장 우수 상담 기법 (Sales Pitch Tip)
               </h3>
               <p className="text-xs text-slate-700 leading-relaxed font-black whitespace-pre-line">
@@ -387,7 +387,7 @@ export default function NewsletterDetail({
                   onClick={onTriggerAnalysis}
                   className="flex items-center gap-1.5 text-slate-450 hover:text-slate-700 font-bold px-3 py-1.5 rounded-xl text-[11px] transition border border-dashed border-slate-200 hover:border-slate-350 bg-white cursor-pointer select-none"
                 >
-                  <Cpu className="w-3.5 h-3.5 text-[#FF4B4B]" />
+                  <Cpu className="w-3.5 h-3.5 text-[#0891b2]" />
                   <span>소식지 AI 다시 실시간 분석하기</span>
                 </button>
               </div>
