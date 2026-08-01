@@ -21,17 +21,31 @@ export interface Newsletter {
   demoPdfUrl?: string; // fallback PDF url
 }
 
+// Demo-mode dates are generated relative to "today" so the mock newsletters
+// always look like this month's / last month's issues, regardless of when
+// this app is opened (avoids re-editing hardcoded dates for every demo).
+const now = new Date();
+const pad = (n: number) => String(n).padStart(2, '0');
+const monthOffset = (monthsAgo: number) => {
+  const d = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
+  return { year: d.getFullYear(), month: d.getMonth() + 1 };
+};
+const thisMonth = monthOffset(0);
+const lastMonth = monthOffset(1);
+const ym = (m: { year: number; month: number }) => `${m.year}-${pad(m.month)}`;
+const labelYM = (m: { year: number; month: number }) => `${m.year}년_${pad(m.month)}월`;
+
 export const mockNewsletters: Newsletter[] = [
   {
     id: "mock_life_samsung_06",
-    name: "삼성생명_2026년_06월_보험소식지.pdf",
+    name: `삼성생명_${labelYM(thisMonth)}_보험소식지.pdf`,
     folder: "생명보험",
     insurer: "삼성생명",
-    publishMonth: "2026-06",
+    publishMonth: ym(thisMonth),
     size: "1.4 MB",
-    modifiedTime: "2026-06-01 09:12",
+    modifiedTime: `${ym(thisMonth)}-01 09:12`,
     summary: {
-      title: "삼성생명 6월 핵심 신상품 및 개정 안내",
+      title: `삼성생명 ${thisMonth.month}월 핵심 신상품 및 개정 안내`,
       highlights: [
         "단기납 종신보험 더블업 환급률 대폭 강화 (7년납 최대 124.5% 보장)",
         "신간편 건강보험 가입 편의성 확대 (3.5.5 -> 3.10.5 옵션 신설)",
@@ -60,20 +74,20 @@ export const mockNewsletters: Newsletter[] = [
         }
       ],
       salesPoint: "금리 인하 전망 시기에 확정 가치 중심의 환급 구조를 지닌 종신 플러스 상품과 초간편 건강 보장을 복합 제안하여 청약 성공률 극대화.",
-      notes: "★ 6월 15일까지 초회 보험료 납입 고객 대상 모바일 쿠폰 증정 이벤트 진행 중"
+      notes: `★ ${thisMonth.month}월 15일까지 초회 보험료 납입 고객 대상 모바일 쿠폰 증정 이벤트 진행 중`
     },
     demoPdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
   },
   {
     id: "mock_life_hanwha_06",
-    name: "한화생명_2026년_06월_영업지원_소식지.pdf",
+    name: `한화생명_${labelYM(thisMonth)}_영업지원_소식지.pdf`,
     folder: "생명보험",
     insurer: "한화생명",
-    publishMonth: "2026-06",
+    publishMonth: ym(thisMonth),
     size: "2.1 MB",
-    modifiedTime: "2026-06-02 14:35",
+    modifiedTime: `${ym(thisMonth)}-02 14:35`,
     summary: {
-      title: "한화생명 6월 시그니처 암보험 및 연금 집중 보장",
+      title: `한화생명 ${thisMonth.month}월 시그니처 암보험 및 연금 집중 보장`,
       highlights: [
         "시그니처 암보험 v3 출시: 전이암 보장 횟수 무제한 파격 혜택",
         "연금보험 최저보증 보증이율 3.25% 업계 최고 수준 적용",
@@ -108,14 +122,14 @@ export const mockNewsletters: Newsletter[] = [
   },
   {
     id: "mock_life_kyobo_05",
-    name: "교보생명_2026년_05월_마케팅_소식지.pdf",
+    name: `교보생명_${labelYM(lastMonth)}_마케팅_소식지.pdf`,
     folder: "생명보험",
     insurer: "교보생명",
-    publishMonth: "2026-05",
+    publishMonth: ym(lastMonth),
     size: "1.8 MB",
-    modifiedTime: "2026-05-18 10:05",
+    modifiedTime: `${ym(lastMonth)}-18 10:05`,
     summary: {
-      title: "교보생명 5월 가정의 달 패밀리 보장 캠페인",
+      title: `교보생명 ${lastMonth.month}월 패밀리 보장 캠페인`,
       highlights: [
         "우리아이 하이브리드 교육연금 및 보장 설계 개편",
         "가족 결합 할인율 확대 적용 (주계약 기준 최대 3.5% 할인)",
@@ -133,21 +147,21 @@ export const mockNewsletters: Newsletter[] = [
           benefit: "성장기 건강 보장과 대학교육 수준에 맞는 목돈 마련을 한 번에 준비"
         }
       ],
-      salesPoint: "가정의 달을 맞아 자녀와 부모 통합 설계를 통해 패밀리 결합 할인을 받고 맞춤형 웰니스 서비스를 신청하도록 유도.",
+      salesPoint: "자녀와 부모 통합 설계를 통해 패밀리 결합 할인을 받고 맞춤형 웰니스 서비스를 신청하도록 유도.",
       notes: "계약자 사망 시 보험료 납입 면제 특약 탑재 요건 확인 필수."
     },
     demoPdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
   },
   {
     id: "mock_nonlife_hyundai_06",
-    name: "현대해상_2026년_06월_화이어_소식지.pdf",
+    name: `현대해상_${labelYM(thisMonth)}_화이어_소식지.pdf`,
     folder: "손해보험",
     insurer: "현대해상",
-    publishMonth: "2026-06",
+    publishMonth: ym(thisMonth),
     size: "1.2 MB",
-    modifiedTime: "2026-06-03 16:20",
+    modifiedTime: `${ym(thisMonth)}-03 16:20`,
     summary: {
-      title: "현대해상 6월 장기 손해보험 핵심 이슈 리포트",
+      title: `현대해상 ${thisMonth.month}월 장기 손해보험 핵심 이슈 리포트`,
       highlights: [
         "운전자보험 변호사선임비용 '경찰조사 단계' 포함 무제한 한도 확대",
         "간편종합보험 v5 '연세 많으신 부모님' 전용 암통원 일당 70만원 보장",
@@ -182,14 +196,14 @@ export const mockNewsletters: Newsletter[] = [
   },
   {
     id: "mock_nonlife_db_06",
-    name: "DB손해보험_2026년_06월_업무지원_안내장.pdf",
+    name: `DB손해보험_${labelYM(thisMonth)}_업무지원_안내장.pdf`,
     folder: "손해보험",
     insurer: "DB손해보험",
-    publishMonth: "2026-06",
+    publishMonth: ym(thisMonth),
     size: "1.9 MB",
-    modifiedTime: "2026-06-03 08:30",
+    modifiedTime: `${ym(thisMonth)}-03 08:30`,
     summary: {
-      title: "DB손보 6월 나에게 맞춘 간편 건강보험 집중 분석",
+      title: `DB손보 ${thisMonth.month}월 나에게 맞춘 간편 건강보험 집중 분석`,
       highlights: [
         "10년 고지 세그먼트 신설로 우량 건강자 대상 보험료 대폭 할인",
         "암 무사고 환급 특약 신설 (가입 중 암 미발병 시 만기 환급금 가산)",
@@ -197,7 +211,7 @@ export const mockNewsletters: Newsletter[] = [
       ],
       mainProducts: [
         {
-          name: "나에게 맞춘 간편건강보험 26.06",
+          name: `나에게 맞춘 간편건강보험 ${String(thisMonth.year).slice(2)}.${pad(thisMonth.month)}`,
           features: [
             "최대 10년간 무사고 시 정기 전환을 통한 누적 할인 적용",
             "심장 부정맥 및 무증상 심근경색 보장 고지 완화",
@@ -214,14 +228,14 @@ export const mockNewsletters: Newsletter[] = [
   },
   {
     id: "mock_nonlife_kb_05",
-    name: "KB손해보험_2026년_05월_소식지_영업자료.pdf",
+    name: `KB손해보험_${labelYM(lastMonth)}_소식지_영업자료.pdf`,
     folder: "손해보험",
     insurer: "KB손해보험",
-    publishMonth: "2026-05",
+    publishMonth: ym(lastMonth),
     size: "2.3 MB",
-    modifiedTime: "2026-05-15 11:45",
+    modifiedTime: `${ym(lastMonth)}-15 11:45`,
     summary: {
-      title: "KB손보 5월 스마트 반려견 및 가족 복합보험 리포트",
+      title: `KB손보 ${lastMonth.month}월 스마트 반려견 및 가족 복합보험 리포트`,
       highlights: [
         "반려동물 보험(금쪽같은 댕댕이) 보장 비율 최대 90%로 확대 상향",
         "상해 입원 일당 및 골절 수술 도수치료 연계 패밀리 보장",
@@ -239,7 +253,7 @@ export const mockNewsletters: Newsletter[] = [
           benefit: "진료비가 비싼 동물의료비 리스크를 전면 상쇄하고 상호 케어 서비스 이용 가능"
         }
       ],
-      salesPoint: "펫팸족 증가 추세에 맞게, 펫보험 가입 시 견주에 대한 상해 보장 특약 무료 가입 프로모션(5월 한정 연장)을 안내.",
+      salesPoint: `펫팸족 증가 추세에 맞게, 펫보험 가입 시 견주에 대한 상해 보장 특약 무료 가입 프로모션(${lastMonth.month}월 한정 연장)을 안내.`,
       notes: "가입 연령은 생후 60일 이상부터 최대 10세까지 가능하며, 갱신을 통해 평생 보장."
     },
     demoPdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
