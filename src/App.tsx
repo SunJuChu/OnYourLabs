@@ -15,7 +15,8 @@ import {
   Sparkles,
   Layers,
   ChevronRight,
-  Settings
+  Settings,
+  Menu
 } from 'lucide-react';
 
 export default function App() {
@@ -53,6 +54,7 @@ export default function App() {
   });
   const [googleUser, setGoogleUser] = useState<GoogleUser | null>(null);
   const [isConfiguringClientId, setIsConfiguringClientId] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
   // Drive Sync States
   const [driveFiles, setDriveFiles] = useState<Newsletter[]>([]);
@@ -364,13 +366,27 @@ export default function App() {
         hasEduFolder={hasEduFolder}
         refreshing={refreshing}
         onRefresh={() => googleAccessToken && loadDriveFiles(googleAccessToken)}
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
       />
 
       {/* 2. Main Content Board */}
-      <main className="flex-1 overflow-y-auto flex flex-col h-full focus:outline-none">
-        
+      <main className="flex-1 overflow-y-auto flex flex-col h-full focus:outline-none min-w-0">
+
         {/* Top Floating Color Strip mimicking Streamlit */}
         <div className="h-1 w-full bg-gradient-to-r from-[#0d2461] via-[#0abde3] to-[#0d2461] shrink-0" />
+
+        {/* Mobile-only top bar with hamburger menu trigger */}
+        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-slate-200 bg-white shrink-0">
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="p-2 -ml-2 rounded-lg text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+            aria-label="메뉴 열기"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <span className="text-sm font-black text-slate-800">OnYourLabs</span>
+        </div>
 
         {/* Global Banner and Setup Dialog */}
         {isConfiguringClientId && (

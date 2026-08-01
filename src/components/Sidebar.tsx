@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import { GoogleUser } from '../types';
-import { 
-  FolderLock, 
-  Layers, 
-  FileText, 
-  Info, 
-  LogOut, 
-  Search, 
-  Filter, 
-  HelpCircle, 
+import {
+  FolderLock,
+  Layers,
+  FileText,
+  Info,
+  LogOut,
+  Search,
+  Filter,
+  HelpCircle,
   CheckCircle,
   Database,
   ExternalLink,
   Activity,
   Stethoscope,
-  Bookmark
+  Bookmark,
+  X
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -35,6 +36,8 @@ interface SidebarProps {
   hasEduFolder: boolean;
   refreshing: boolean;
   onRefresh: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export default function Sidebar({
@@ -55,6 +58,8 @@ export default function Sidebar({
   hasEduFolder,
   refreshing,
   onRefresh,
+  isOpen,
+  onClose,
 }: SidebarProps) {
   const [showSetupHelp, setShowSetupHelp] = useState(false);
   const [showKcdHelper, setShowKcdHelper] = useState(false);
@@ -75,7 +80,21 @@ export default function Sidebar({
   ];
 
   return (
-    <aside className="w-80 bg-slate-50 text-slate-800 border-r border-slate-200/60 flex flex-col h-full overflow-y-auto select-none font-sans">
+    <>
+      {/* Mobile-only backdrop, closes the drawer on tap */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 z-30 md:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`fixed md:static inset-y-0 left-0 z-40 w-80 max-w-[85vw] bg-slate-50 text-slate-800 border-r border-slate-200/60 flex flex-col h-full overflow-y-auto select-none font-sans transform transition-transform duration-300 ease-in-out md:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
       {/* OnYourLabs Brand Header */}
       <div className="px-5 py-5 border-b border-[#1a4a9e]/20 flex flex-col gap-1.5 bg-[#0d2461]">
         <div className="flex items-center gap-3">
@@ -84,12 +103,19 @@ export default function Sidebar({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-sm font-black tracking-tight text-white leading-tight">
               OnYourLabs
             </h1>
             <p className="text-[10px] text-[#0abde3] font-semibold">Insurance PDF Explorer</p>
           </div>
+          <button
+            onClick={onClose}
+            className="md:hidden text-white/60 hover:text-white transition cursor-pointer p-1"
+            aria-label="메뉴 닫기"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
         <div className="flex items-center justify-between mt-1 text-[9px] font-mono text-white/30">
           <span>Analysis & Future Research</span>
@@ -470,6 +496,7 @@ export default function Sidebar({
           Analysis & Future Research
         </p>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
