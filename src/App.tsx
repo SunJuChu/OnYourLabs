@@ -3,6 +3,7 @@ import { mockNewsletters } from './data/mockNewsletters';
 import Sidebar from './components/Sidebar';
 import MetricCard from './components/MetricCard';
 import NewsletterDetail from './components/NewsletterDetail';
+import ReimbursementCalculatorGate from './components/calculator/ReimbursementCalculatorGate';
 import { Newsletter, GoogleUser, NewsletterSummary } from './types';
 import { 
   FileCheck, 
@@ -46,6 +47,7 @@ export default function App() {
 
   // --- States ---
   const [mode, setMode] = useState<'demo' | 'drive'>('demo');
+  const [activeView, setActiveView] = useState<'newsletters' | 'calculator'>('newsletters');
   const [customClientId, setCustomClientId] = useState<string>(() => {
     return localStorage.getItem('STREAMLIT_GOOGLE_CLIENT_ID') || (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || '';
   });
@@ -351,6 +353,8 @@ export default function App() {
       <Sidebar
         mode={mode}
         setMode={setMode}
+        activeView={activeView}
+        setActiveView={setActiveView}
         googleUser={googleUser}
         onGoogleSignIn={handleGoogleSignIn}
         onGoogleSignOut={handleGoogleSignOut}
@@ -507,7 +511,15 @@ export default function App() {
 
         {/* Main Body Grid Layout */}
         <div className="p-6 space-y-6 flex-1 flex flex-col">
-          
+          {activeView === 'calculator' ? (
+            <ReimbursementCalculatorGate
+              mode={mode}
+              isDriveConnected={!!googleAccessToken}
+              onGoogleSignIn={() => handleGoogleSignIn()}
+              onSwitchToDriveMode={() => setMode('drive')}
+            />
+          ) : (
+          <>
           {/* Dashboard Title Panel */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
             <div>
@@ -693,6 +705,8 @@ export default function App() {
             </div>
 
           </div>
+          </>
+          )}
 
         </div>
 

@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
 @import "tailwindcss";
 
+/* Ported calculator components include dark: variants; this app is light-theme only,
+   so neutralize the dark variant to prevent OS dark-mode preference from leaking in. */
+@custom-variant dark (&:where(.__never-active__, .__never-active__ *));
+
 @theme {
   --font-sans: "Noto Sans KR", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;

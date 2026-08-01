@@ -15,12 +15,16 @@ import {
   Activity,
   Stethoscope,
   Bookmark,
-  X
+  X,
+  LayoutDashboard,
+  Calculator
 } from 'lucide-react';
 
 interface SidebarProps {
   mode: 'demo' | 'drive';
   setMode: (mode: 'demo' | 'drive') => void;
+  activeView: 'newsletters' | 'calculator';
+  setActiveView: (view: 'newsletters' | 'calculator') => void;
   googleUser: GoogleUser | null;
   onGoogleSignIn: () => void;
   onGoogleSignOut: () => void;
@@ -43,6 +47,8 @@ interface SidebarProps {
 export default function Sidebar({
   mode,
   setMode,
+  activeView,
+  setActiveView,
   googleUser,
   onGoogleSignIn,
   onGoogleSignOut,
@@ -124,6 +130,37 @@ export default function Sidebar({
       </div>
 
       <div className="p-5 space-y-5 flex-1">
+        {/* Primary Navigation: switch between newsletter dashboard and calculator */}
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/60 shadow-sm space-y-3">
+          <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">
+            📌 메뉴 이동
+          </label>
+          <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl">
+            <button
+              onClick={() => setActiveView('newsletters')}
+              className={`py-1.5 text-xs font-bold rounded-lg transition px-2 text-center cursor-pointer flex items-center justify-center gap-1.5 ${
+                activeView === 'newsletters'
+                  ? 'bg-white text-[#0891b2] shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              소식지
+            </button>
+            <button
+              onClick={() => setActiveView('calculator')}
+              className={`py-1.5 text-xs font-bold rounded-lg transition px-2 text-center cursor-pointer flex items-center justify-center gap-1.5 ${
+                activeView === 'calculator'
+                  ? 'bg-white text-[#0891b2] shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Calculator className="w-3.5 h-3.5" />
+              실손계산기
+            </button>
+          </div>
+        </div>
+
         {/* Step 1: Mode Configuration */}
         <div className="bg-white p-4.5 rounded-2xl border border-slate-200/60 shadow-sm space-y-3">
           <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">
@@ -254,6 +291,8 @@ export default function Sidebar({
           </div>
         )}
 
+        {activeView === 'newsletters' && (
+        <>
         {/* Step 2: Main Filters */}
         <div className="bg-white border border-slate-200/60 rounded-2xl p-4.5 space-y-4 shadow-sm">
           <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">
@@ -451,6 +490,8 @@ export default function Sidebar({
             )}
           </div>
         </div>
+        </>
+        )}
 
         {/* Set up help Card inside styling */}
         <div className="bg-[#262730] p-4.5 rounded-2xl shadow-md text-slate-200">
