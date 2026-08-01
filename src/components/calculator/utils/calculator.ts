@@ -226,20 +226,32 @@ export function calculateInsuranceRefund(input: CalculationInput): CalculationRe
   }
 
   // --- Limits calculation ---
-  let tempClaimable = totalMedicalExpense - (coveredDeductible + uncoveredDeductible + specialDeductible + pharmacyDeductible);
-  tempClaimable = Math.max(0, tempClaimable);
+  // 급여+비급여(기본형) 청구가능액과 3대 비급여 특약 청구가능액은 서로 다른 한도가 적용되므로 분리 산정한다.
+  const basicClaimable = Math.max(0, (coveredSelfPaid - coveredDeductible) + (uncoveredExpense - uncoveredDeductible));
+  const specialClaimable = Math.max(0, totalSpecialExpense - specialDeductible);
+  const pharmacyClaimable = Math.max(0, pharmacyExpense - pharmacyDeductible);
 
   if (medicalType === 'outpatient') {
     const outpatientLimit = limits.outpatientLimitPerVisit || 200000;
-    if (tempClaimable > outpatientLimit) {
-      exceededLimitDeduction = tempClaimable - outpatientLimit;
-      notes.push(`통원 1회당 보장 한도(${outpatientLimit.toLocaleString()}원)를 초과하여 ${exceededLimitDeduction.toLocaleString()}원이 차감되었습니다.`);
+    if (basicClaimable > outpatientLimit) {
+      const basicExceeded = basicClaimable - outpatientLimit;
+      exceededLimitDeduction += basicExceeded;
+      notes.push(`통원(급여+비급여) 1회당 보장 한도(${outpatientLimit.toLocaleString()}원)를 초과하여 ${basicExceeded.toLocaleString()}원이 차감되었습니다.`);
+    }
+
+    if (totalSpecialExpense > 0) {
+      const specialLimit = limits.specialLimitPerVisit || 200000;
+      if (specialClaimable > specialLimit) {
+        const specialExceeded = specialClaimable - specialLimit;
+        exceededLimitDeduction += specialExceeded;
+        notes.push(`3대 비급여 특약(도수/주사/MRI) 1회당 보장 한도(${specialLimit.toLocaleString()}원)를 초과하여 ${specialExceeded.toLocaleString()}원이 차감되었습니다.`);
+      }
     }
   } else if (medicalType === 'pharmacy') {
     const pharmacyLimit = limits.pharmacyLimitPerVisit || 50000;
-    if (tempClaimable > pharmacyLimit) {
-      exceededLimitDeduction = tempClaimable - pharmacyLimit;
-      notes.push(`약제 1회당 보장 한도(${pharmacyLimit.toLocaleString()}원)를 초과하여 ${exceededLimitDeduction.toLocaleString()}원이 차감되었습니다.`);
+    if (pharmacyClaimable > pharmacyLimit) {
+      exceededLimitDeduction += pharmacyClaimable - pharmacyLimit;
+      notes.push(`약제 1회당 보장 한도(${pharmacyLimit.toLocaleString()}원)를 초과하여 ${(pharmacyClaimable - pharmacyLimit).toLocaleString()}원이 차감되었습니다.`);
     }
   }
 

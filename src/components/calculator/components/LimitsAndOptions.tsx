@@ -50,6 +50,26 @@ export const LimitsAndOptions: React.FC<LimitsAndOptionsProps> = ({
             </div>
           </div>
 
+          {/* 3대 비급여 특약 1회당 보장 한도 (통원 한도와 별도 산정) */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+              3대 특약(도수/주사/MRI) 1회당 보장 한도
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={limits.specialLimitPerVisit}
+                onChange={(e) => onChangeLimit('specialLimitPerVisit', Number(e.target.value))}
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value={200000}>20만원 (통원 한도와 동일)</option>
+                <option value={100000}>10만원 (소액 한도)</option>
+                <option value={150000}>15만원</option>
+                <option value={300000}>30만원</option>
+                <option value={500000}>50만원 (확장 한도)</option>
+              </select>
+            </div>
+          </div>
+
           {/* 처방약 1회당 보장 한도 */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">

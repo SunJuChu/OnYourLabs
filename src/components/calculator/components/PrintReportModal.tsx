@@ -87,6 +87,10 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
               <span className="text-gray-500">통원 보장 한도:</span>{' '}
               <strong>{(input.limits.outpatientLimitPerVisit / 10000).toLocaleString()}만원</strong>
             </div>
+            <div>
+              <span className="text-gray-500">3대 특약 보장 한도:</span>{' '}
+              <strong>{(input.limits.specialLimitPerVisit / 10000).toLocaleString()}만원</strong>
+            </div>
           </div>
 
           {/* Section 2: Financial Breakdown Table */}

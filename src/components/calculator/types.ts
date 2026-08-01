@@ -14,7 +14,8 @@ export interface ExpenseBreakdown {
 }
 
 export interface CalculationLimits {
-  outpatientLimitPerVisit: number; // 통원 1회당 한도 (기본 20만원~30만원)
+  outpatientLimitPerVisit: number; // 통원(급여+비급여) 1회당 한도 (기본 20만원~30만원)
+  specialLimitPerVisit: number;    // 3대 비급여 특약(도수/주사/MRI) 1회당 한도 - 통원 한도와 별도 산정
   pharmacyLimitPerVisit: number;   // 약제 1회당 한도 (기본 5만원~10만원)
   manualTherapyAnnualCount: number; // 도수치료 연간 횟수
 }

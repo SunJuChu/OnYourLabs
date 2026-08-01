@@ -31,6 +31,7 @@ const DEFAULT_EXPENSES: ExpenseBreakdown = {
 
 const DEFAULT_LIMITS: CalculationLimits = {
   outpatientLimitPerVisit: 200000,
+  specialLimitPerVisit: 200000,
   pharmacyLimitPerVisit: 50000,
   manualTherapyAnnualCount: 0,
 };
