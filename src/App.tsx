@@ -240,7 +240,7 @@ export default function App() {
       return;
     }
 
-    const redirectUri = window.location.origin;
+    const redirectUri = `${window.location.origin}/dashboard`;
     const scopes = [
       "https://www.googleapis.com/auth/drive.readonly",
       "https://www.googleapis.com/auth/userinfo.email",
