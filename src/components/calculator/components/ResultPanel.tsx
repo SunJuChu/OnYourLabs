@@ -54,12 +54,26 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     const rows = [
       ['항목', '금액(원)', '비고'],
       ['총 발생 진료비', result.totalMedicalExpense, '전체 병원비'],
-      ['급여 본인부담금', input.expenses.coveredSelfPaid, ''],
-      ['일반 비급여', input.expenses.uncoveredExpense, ''],
+      [input.medicalType === 'pharmacy' ? '약제비 본인부담금(급여)' : '급여 본인부담금', input.expenses.coveredSelfPaid, ''],
+      [
+        input.medicalType === 'pharmacy'
+          ? '비급여전액본인부담금'
+          : input.generation === '5gen'
+            ? (input.customOptions?.isSanjeongTeukrye ? '중증 비급여(산정특례)' : '비중증 비급여')
+            : '일반 비급여',
+        input.expenses.uncoveredExpense,
+        '',
+      ],
+      ...(input.generation === '5gen' && input.medicalType === 'inpatient' && (input.expenses.uncoveredRoomFee || 0) > 0
+        ? [['비급여 상급병실료 차액', input.expenses.uncoveredRoomFee || 0, '']]
+        : []),
       ['3대 특약 비급여', input.expenses.specialManualTherapy + input.expenses.specialInjection + input.expenses.specialMri, ''],
-      ['처방 약제비', input.expenses.pharmacyExpense, ''],
-      ['급여 공제액', result.deductionDetail.coveredDeductible, '차감'],
-      ['비급여 공제액', result.deductionDetail.uncoveredDeductible, '차감'],
+      ...(input.medicalType === 'pharmacy'
+        ? [['처방 약제비 공제액', result.deductionDetail.pharmacyDeductible, '차감']]
+        : [
+            ['급여 공제액', result.deductionDetail.coveredDeductible, '차감'],
+            ['비급여 공제액', result.deductionDetail.uncoveredDeductible, '차감'],
+          ]),
       ['3대 특약 공제액', result.deductionDetail.specialDeductible, '차감'],
       ['한도 초과 차감', result.deductionDetail.exceededLimitDeduction, '차감'],
       ['최종 예상 환급금', result.reimbursementAmount, `보장 비율 ${result.coveragePercentage}%`],

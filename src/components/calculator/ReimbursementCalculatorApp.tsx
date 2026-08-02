@@ -8,6 +8,8 @@ import {
   CalculationLimits,
   SavedCalculation,
 } from './types';
+
+type CustomOptions = NonNullable<CalculationInput['customOptions']>;
 import { calculateInsuranceRefund } from './utils/calculator';
 import { Header } from './components/Header';
 import { GenerationSelector } from './components/GenerationSelector';
@@ -26,7 +28,6 @@ const DEFAULT_EXPENSES: ExpenseBreakdown = {
   specialManualTherapy: 150000,
   specialInjection: 0,
   specialMri: 0,
-  pharmacyExpense: 0,
 };
 
 const DEFAULT_LIMITS: CalculationLimits = {
@@ -48,6 +49,7 @@ export default function ReimbursementCalculatorApp() {
   const [hospitalLevel, setHospitalLevel] = useState<HospitalLevel>('clinic');
   const [expenses, setExpenses] = useState<ExpenseBreakdown>(DEFAULT_EXPENSES);
   const [limits, setLimits] = useState<CalculationLimits>(DEFAULT_LIMITS);
+  const [customOptions, setCustomOptions] = useState<CustomOptions>({});
 
   // Modals State
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
@@ -99,8 +101,9 @@ export default function ReimbursementCalculatorApp() {
       hospitalLevel,
       expenses,
       limits,
+      customOptions,
     }),
-    [generation, medicalType, hospitalLevel, expenses, limits]
+    [generation, medicalType, hospitalLevel, expenses, limits, customOptions]
   );
 
   const calculationResult = useMemo(() => {
@@ -116,6 +119,10 @@ export default function ReimbursementCalculatorApp() {
     setLimits((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleCustomOptionChange = <K extends keyof CustomOptions>(field: K, value: CustomOptions[K]) => {
+    setCustomOptions((prev) => ({ ...prev, [field]: value }));
+  };
+
   const handleReset = () => {
     setGeneration('4gen');
     setMedicalType('outpatient');
@@ -126,9 +133,9 @@ export default function ReimbursementCalculatorApp() {
       specialManualTherapy: 0,
       specialInjection: 0,
       specialMri: 0,
-      pharmacyExpense: 0,
     });
     setLimits(DEFAULT_LIMITS);
+    setCustomOptions({});
     showToast('계산기 입력이 초기화되었습니다.');
   };
 
@@ -161,6 +168,7 @@ export default function ReimbursementCalculatorApp() {
     setHospitalLevel(saved.input.hospitalLevel);
     setExpenses(saved.input.expenses);
     setLimits(saved.input.limits);
+    setCustomOptions(saved.input.customOptions || {});
     showToast(`${saved.title} 내역을 불러왔습니다.`);
   };
 
@@ -213,8 +221,10 @@ export default function ReimbursementCalculatorApp() {
               medicalType={medicalType}
               hospitalLevel={hospitalLevel}
               generation={generation}
+              customOptions={customOptions}
               onSelectMedicalType={setMedicalType}
               onSelectHospitalLevel={setHospitalLevel}
+              onChangeCustomOption={handleCustomOptionChange}
             />
 
             {/* Step 3: Medical Expense Breakdown */}
@@ -222,7 +232,9 @@ export default function ReimbursementCalculatorApp() {
               expenses={expenses}
               medicalType={medicalType}
               generation={generation}
+              customOptions={customOptions}
               onChangeExpense={handleExpenseChange}
+              onChangeCustomOption={handleCustomOptionChange}
             />
 
             {/* Step 4 & 5: Limits, Options & Primary Calculate / Reset Action */}

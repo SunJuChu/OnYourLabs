@@ -108,18 +108,41 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td className="border border-gray-200 dark:border-gray-700 p-2.5 font-medium">급여 본인부담금</td>
-                  <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-right">{input.expenses.coveredSelfPaid.toLocaleString()}원</td>
-                  <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-right font-semibold text-rose-600">-{result.deductionDetail.coveredDeductible.toLocaleString()}원</td>
-                  <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-gray-500">병원급 최소 공제 vs 자기부담률</td>
-                </tr>
-                <tr>
-                  <td className="border border-gray-200 dark:border-gray-700 p-2.5 font-medium">일반 비급여</td>
-                  <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-right">{input.expenses.uncoveredExpense.toLocaleString()}원</td>
-                  <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-right font-semibold text-rose-600">-{result.deductionDetail.uncoveredDeductible.toLocaleString()}원</td>
-                  <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-gray-500">비급여 자기부담률 적용</td>
-                </tr>
+                {input.medicalType === 'pharmacy' ? (
+                  <tr>
+                    <td className="border border-gray-200 dark:border-gray-700 p-2.5 font-medium">처방 약제비 (급여+비급여)</td>
+                    <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-right">{(input.expenses.coveredSelfPaid + input.expenses.uncoveredExpense).toLocaleString()}원</td>
+                    <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-right font-semibold text-rose-600">-{result.deductionDetail.pharmacyDeductible.toLocaleString()}원</td>
+                    <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-gray-500">세대별 약제비 공제 기준 적용</td>
+                  </tr>
+                ) : (
+                  <>
+                    <tr>
+                      <td className="border border-gray-200 dark:border-gray-700 p-2.5 font-medium">급여 본인부담금</td>
+                      <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-right">{input.expenses.coveredSelfPaid.toLocaleString()}원</td>
+                      <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-right font-semibold text-rose-600">-{result.deductionDetail.coveredDeductible.toLocaleString()}원</td>
+                      <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-gray-500">병원급 최소 공제 vs 자기부담률</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-200 dark:border-gray-700 p-2.5 font-medium">
+                        {input.generation === '5gen'
+                          ? (input.customOptions?.isSanjeongTeukrye ? '중증 비급여 (산정특례)' : '비중증 비급여')
+                          : '일반 비급여'}
+                      </td>
+                      <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-right">{input.expenses.uncoveredExpense.toLocaleString()}원</td>
+                      <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-right font-semibold text-rose-600">-{result.deductionDetail.uncoveredDeductible.toLocaleString()}원</td>
+                      <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-gray-500">비급여 자기부담률 적용</td>
+                    </tr>
+                    {input.generation === '5gen' && input.medicalType === 'inpatient' && (input.expenses.uncoveredRoomFee || 0) > 0 && (
+                      <tr>
+                        <td className="border border-gray-200 dark:border-gray-700 p-2.5 font-medium">비급여 상급병실료 차액</td>
+                        <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-right">{(input.expenses.uncoveredRoomFee || 0).toLocaleString()}원</td>
+                        <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-right">-</td>
+                        <td className="border border-gray-200 dark:border-gray-700 p-2.5 text-gray-500">병실료 50% 와 입원일수×10만원 중 작은 금액만 지급</td>
+                      </tr>
+                    )}
+                  </>
+                )}
                 {(input.expenses.specialManualTherapy + input.expenses.specialInjection + input.expenses.specialMri) > 0 && (
                   <tr>
                     <td className="border border-gray-200 dark:border-gray-700 p-2.5 font-medium">3대 비급여 특약</td>

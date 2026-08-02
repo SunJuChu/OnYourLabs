@@ -1,22 +1,28 @@
 import React from 'react';
-import { MedicalType, HospitalLevel, InsuranceGeneration } from '../types';
+import { MedicalType, HospitalLevel, InsuranceGeneration, CalculationInput } from '../types';
 import { HOSPITAL_LEVEL_INFOS } from '../data/insuranceRules';
-import { Stethoscope, Building2, Building, Pill, UserCheck } from 'lucide-react';
+import { Stethoscope, Building2, Building, Pill, UserCheck, AlertCircle } from 'lucide-react';
+
+type CustomOptions = NonNullable<CalculationInput['customOptions']>;
 
 interface HospitalSelectorProps {
   medicalType: MedicalType;
   hospitalLevel: HospitalLevel;
   generation: InsuranceGeneration;
+  customOptions?: CustomOptions;
   onSelectMedicalType: (type: MedicalType) => void;
   onSelectHospitalLevel: (level: HospitalLevel) => void;
+  onChangeCustomOption?: <K extends keyof CustomOptions>(field: K, value: CustomOptions[K]) => void;
 }
 
 export const HospitalSelector: React.FC<HospitalSelectorProps> = ({
   medicalType,
   hospitalLevel,
   generation,
+  customOptions,
   onSelectMedicalType,
   onSelectHospitalLevel,
+  onChangeCustomOption,
 }) => {
   const hospitalTypes: HospitalLevel[] = ['clinic', 'hospital', 'tertiary'];
 
@@ -120,6 +126,40 @@ export const HospitalSelector: React.FC<HospitalSelectorProps> = ({
               );
             })}
           </div>
+
+          {/* 5세대 전용: '병원/종합병원' 선택 시 실제 등급 세분화 (option c) */}
+          {generation === '5gen' && hospitalLevel === 'hospital' && (
+            <div className="mt-3 p-3 bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-xl">
+              <div className="flex items-start gap-1.5 mb-2 text-[11px] text-purple-700 dark:text-purple-300">
+                <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span>5세대는 "종합병원 이상"과 "의원/일반병원"의 최소공제액(1만원/2만원) 및 비중증 비급여 입원 300만원 한도 적용 여부가 다릅니다. 실제 방문 기관 등급을 선택해주세요.</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => onChangeCustomOption?.('isGeneralHospitalOrAbove', false)}
+                  className={`p-2 rounded-lg border text-[11px] font-semibold transition ${
+                    !customOptions?.isGeneralHospitalOrAbove
+                      ? 'border-purple-600 bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200'
+                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300'
+                  }`}
+                >
+                  일반병원 (최소 1만원)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeCustomOption?.('isGeneralHospitalOrAbove', true)}
+                  className={`p-2 rounded-lg border text-[11px] font-semibold transition ${
+                    customOptions?.isGeneralHospitalOrAbove
+                      ? 'border-purple-600 bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200'
+                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300'
+                  }`}
+                >
+                  종합병원 이상 (최소 2만원, 입원 300만원 한도 면제)
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-800 dark:text-amber-200">
