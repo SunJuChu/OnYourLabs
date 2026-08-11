@@ -1,5 +1,33 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+// 파일명에서 발행 연월을 추출한다. "2026-06", "2026년6월", "2026.06" 같은
+// 4자리 연도 표기와 "26.08", "26-08" 같은 2자리 연도 표기(GA소식지 실제 관행)를 모두 지원한다.
+// 파일명에서 끝내 찾지 못하면, 하드코딩된 임의값 대신 구글 드라이브의 실제 수정시각(modifiedTime)에서
+// 연월을 뽑아 "실시간 폴더 내용"을 최대한 정직하게 반영한다.
+function parsePublishMonth(fileName: string, modifiedTime?: string): string {
+  const base = fileName.replace(/\.pdf$/i, '');
+
+  // 1) 4자리 연도: 2026-06, 2026_06, 2026년06월, 2026.06
+  const fourDigit = base.match(/(20\d{2})[.\-_년]\s?(0?[1-9]|1[0-2])월?/);
+  if (fourDigit) {
+    return `${fourDigit[1]}-${fourDigit[2].padStart(2, '0')}`;
+  }
+
+  // 2) 2자리 연도: 26.08, 26-08, 26_08 (GA소식지 파일명 관행)
+  const twoDigit = base.match(/(\d{2})[.\-_](0?[1-9]|1[0-2])(?!\d)/);
+  if (twoDigit) {
+    const yyyy = 2000 + parseInt(twoDigit[1], 10);
+    return `${yyyy}-${twoDigit[2].padStart(2, '0')}`;
+  }
+
+  // 3) 파일명에서 못 찾으면 드라이브 실제 수정시각을 사용 (하드코딩된 가짜 날짜 대신)
+  if (modifiedTime && modifiedTime.length >= 7) {
+    return modifiedTime.slice(0, 7);
+  }
+
+  return "발행월 미상";
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const accessToken = req.query.accessToken as string;
   if (!accessToken) {
@@ -69,9 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           else if (nameLower.includes("신한")) insurer = "신한라이프";
           else if (nameLower.includes("흥국")) insurer = category === "생명보험" ? "흥국생명" : "흥국화재";
 
-          let publishMonth = "2026-06";
-          const dateMatch = file.name.match(/(202[0-9])[년_\-]?([0-1][0-9])월?/);
-          if (dateMatch) publishMonth = `${dateMatch[1]}-${dateMatch[2]}`;
+          const publishMonth = parsePublishMonth(file.name, file.modifiedTime);
 
           const sizeBytes = parseInt(file.size || "0");
           const sizeStr = sizeBytes > 0 ? (sizeBytes / (1024 * 1024)).toFixed(1) + " MB" : "크기 미상";
@@ -85,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             size: sizeStr,
             modifiedTime: file.modifiedTime
               ? file.modifiedTime.slice(0, 16).replace("T", " ")
-              : "2026-06-15 00:00",
+              : "수정시각 미상",
             summary: {
               title: `${insurer} 소식지 (${publishMonth})`,
               highlights: [
