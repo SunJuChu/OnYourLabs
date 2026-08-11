@@ -85,6 +85,19 @@ export default function Sidebar({
     { code: 'I25', name: '만성 허혈성 심장병', type: 'heart' },
   ];
 
+  // KCD-9 공식 포털(kcd9.do)은 완전 클라이언트사이드 검색 방식이라
+  // URL 파라미터로 검색어를 자동 채워 넣는 딥링크가 불가능하다.
+  // 대신 검색어를 클립보드에 복사해두고 포털을 새 탭으로 열어,
+  // 사용자가 포털 검색창에 붙여넣기만 하면 되도록 한 단계를 덜어준다.
+  const openKcd9Search = async (term: string) => {
+    try {
+      await navigator.clipboard.writeText(term);
+    } catch {
+      // 클립보드 접근이 막힌 환경이면 복사는 건너뛰고 포털만 연다.
+    }
+    window.open('https://www.koicd.kr/kcd/kcd9.do', '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <>
       {/* Mobile-only backdrop, closes the drawer on tap */}
@@ -351,12 +364,12 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* KCD-8 질병사인분류 연동 도우미 한국어 위젯 */}
+        {/* KCD-9 질병사인분류 연동 도우미 한국어 위젯 */}
         <div className="bg-white border border-slate-200 rounded-2xl p-4.5 space-y-3 shadow-sm" id="kcd-helper-widget">
           <div className="flex items-center justify-between border-b border-rose-50 pb-2">
             <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
               <Stethoscope className="w-4 h-4 text-[#0891b2]" />
-              🩺 KCD-8 질병코드 연동기
+              🩺 KCD-9 질병코드 연동기
             </span>
             <button
               onClick={() => setShowKcdHelper(!showKcdHelper)}
@@ -368,18 +381,18 @@ export default function Sidebar({
 
           <div className="space-y-2.5">
             <p className="text-[11px] text-slate-500 leading-relaxed font-semibold">
-              KCD 8차 표준 공식 포털 연계 위젯입니다. 질병명을 검색하여 직접 매칭하고 설계 가이드에 활용하세요.
+              KCD 9차(2026.1.1 시행, 국가 공식 최신 기준) 표준 공식 포털 연계 위젯입니다. 검색어를 입력하면 클립보드에 복사되니, 포털이 열리면 검색창에 붙여넣기(Ctrl+V) 해주세요.
             </p>
 
             {/* Quick Link Button */}
             <a
-              href="https://www.koicd.kr/kcd/kcd.do?degree=08"
+              href="https://www.koicd.kr/kcd/kcd9.do"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between bg-slate-50 hover:bg-slate-100 p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 transition text-[#0891b2] cursor-pointer"
             >
               <span className="text-[11px] font-extrabold text-slate-700 flex items-center gap-1">
-                KCD-8차 공식 포털 바로가기
+                KCD-9차 공식 포털 바로가기
               </span>
               <ExternalLink className="w-3.5 h-3.5 text-[#0891b2]" />
             </a>
@@ -403,14 +416,16 @@ export default function Sidebar({
                       alert("검색어를 입력해 주세요!");
                       return;
                     }
-                    const searchUrl = `https://www.koicd.kr/kcd/kcd.do?degree=08&searchWord=${encodeURIComponent(kcdSearchTerm.trim())}`;
-                    window.open(searchUrl, '_blank');
+                    openKcd9Search(kcdSearchTerm.trim());
                   }}
                   className="bg-[#0abde3] hover:bg-[#0891b2] text-white font-extrabold px-3 py-1 rounded-lg text-xs transition cursor-pointer shrink-0"
                 >
                   포털 검색
                 </button>
               </div>
+              <p className="text-[9px] text-slate-400 leading-relaxed">
+                * KCD-9 포털은 자동검색 딥링크를 지원하지 않아, 검색어가 클립보드에 복사됩니다. 새 탭이 열리면 검색창에 붙여넣어 주세요.
+              </p>
             </div>
 
             {/* 3대 질병 다빈도 퀵 매칭보드 */}
@@ -420,7 +435,7 @@ export default function Sidebar({
                   <Bookmark className="w-3 h-3 text-[#0891b2]" />
                   3대 질병 다빈도 담보 코드
                 </span>
-                <span className="text-[9px] text-[#0891b2] font-mono font-bold uppercase font-bold">kcd-8차</span>
+                <span className="text-[9px] text-[#0891b2] font-mono font-bold uppercase font-bold">kcd-9차</span>
               </div>
 
               {/* Category mini Tabs */}
@@ -449,11 +464,10 @@ export default function Sidebar({
                       key={id}
                       onClick={() => {
                         setKcdSearchTerm(item.code);
-                        const searchUrl = `https://www.koicd.kr/kcd/kcd.do?degree=08&searchWord=${item.code}`;
-                        window.open(searchUrl, '_blank');
+                        openKcd9Search(item.code);
                       }}
                       className="flex items-center justify-between p-1.5 bg-white border border-slate-100 rounded-lg hover:border-cyan-200 hover:bg-[#0abde3]/5 transition text-left cursor-pointer group"
-                      title="클릭 시 공식 포털에서 원문 조회"
+                      title="클릭 시 코드가 복사되고 공식 포털이 열립니다 (붙여넣기로 원문 조회)"
                     >
                       <div className="flex items-center gap-1.5 text-left">
                         <span className={`text-[9px] leading-none font-black px-1.5 py-0.5 rounded ${
@@ -479,7 +493,7 @@ export default function Sidebar({
                   <span>💡</span> KCD 매칭 가이드:
                 </p>
                 <p>
-                  한국표준질병사인분류(KCD-8)는 보험금 청구 및 담보 심사 기준이 되는 핵심 분류체계입니다.
+                  한국표준질병사인분류(KCD-9, 2026.1.1 시행)는 보험금 청구 및 담보 심사 기준이 되는 핵심 분류체계입니다.
                 </p>
                 <div className="space-y-0.5 pl-1.5 border-l border-slate-200">
                   <p>• <span className="font-bold text-slate-700">C코드</span>: 일반암, 고액암 등 악성종양</p>
