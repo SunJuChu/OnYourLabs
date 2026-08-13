@@ -1,5 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Send, MessageCircleQuestion, Loader2, FileSearch } from 'lucide-react';
+import { Send, MessageCircleQuestion, Loader2, FileSearch, ChevronDown } from 'lucide-react';
+
+// 답변 커버 범위인 10개 보험사 (헤더의 "보험사 목록" 토글에서 펼쳐 보여줌)
+const COVERED_INSURERS = [
+  'DB손해보험', 'KB손해보험', '교보생명', '메리츠', '미래에셋생명',
+  '삼성생명', '삼성화재', '신한라이프', '한화생명', '현대해상',
+];
 
 interface Source {
   category?: string;
@@ -29,6 +35,7 @@ export default function SurgeryChatApp() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showInsurers, setShowInsurers] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,13 +78,35 @@ export default function SurgeryChatApp() {
     <div className="flex flex-col h-full max-h-[calc(100vh-140px)] bg-white rounded-3xl border border-slate-200/60 shadow-sm overflow-hidden">
       {/* Header */}
       <div className="px-6 py-4 border-b border-slate-200/60 bg-gradient-to-r from-[#0d2461] to-[#0a1e52] shrink-0">
-        <h2 className="text-sm font-black text-white flex items-center gap-2">
-          <MessageCircleQuestion className="w-4 h-4 text-[#0abde3]" />
+        <h2 className="text-sm font-black text-white flex items-center gap-2 flex-wrap">
+          <MessageCircleQuestion className="w-4 h-4 text-[#0abde3] shrink-0" />
           수술비 약관 RAG 챗봇
+          <span className="text-[10px] font-bold text-[#0abde3] bg-white/10 px-2 py-0.5 rounded-full">1-5종 / 1-8종 수술비 특약 전용</span>
         </h2>
-        <p className="text-[11px] text-white/50 mt-1 font-semibold">
-          10개 보험사 수술비 특약 약관 원문 기반으로 답변합니다. API 키는 서버에서만 사용되며 화면에 노출되지 않습니다.
-        </p>
+        <div className="flex items-center gap-1.5 mt-1">
+          <p className="text-[11px] text-white/50 font-semibold">
+            10개 보험사 수술비 특약 약관 원문 기반으로 답변합니다.
+          </p>
+          <button
+            onClick={() => setShowInsurers(v => !v)}
+            className="text-[10px] font-extrabold text-[#0abde3] hover:text-white transition cursor-pointer flex items-center gap-0.5 shrink-0"
+          >
+            보험사 목록
+            <ChevronDown className={`w-3 h-3 transition-transform ${showInsurers ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+        {showInsurers && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {COVERED_INSURERS.map(name => (
+              <span key={name} className="text-[9px] font-bold text-white/70 bg-white/10 px-1.5 py-0.5 rounded-full">
+                {name}
+              </span>
+            ))}
+            <p className="w-full text-[9px] text-white/35 font-semibold mt-1">
+              * 이 10개사 1-5종/1-8종 수술비 특약 분류 외 담보는 답변 대상이 아닙니다.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Sample questions */}
