@@ -17,14 +17,15 @@ import {
   Bookmark,
   X,
   LayoutDashboard,
-  Calculator
+  Calculator,
+  MessageCircleQuestion
 } from 'lucide-react';
 
 interface SidebarProps {
   mode: 'demo' | 'drive';
   setMode: (mode: 'demo' | 'drive') => void;
-  activeView: 'newsletters' | 'calculator';
-  setActiveView: (view: 'newsletters' | 'calculator') => void;
+  activeView: 'newsletters' | 'calculator' | 'surgery-chat';
+  setActiveView: (view: 'newsletters' | 'calculator' | 'surgery-chat') => void;
   googleUser: GoogleUser | null;
   onGoogleSignIn: () => void;
   onGoogleSignOut: () => void;
@@ -148,10 +149,10 @@ export default function Sidebar({
           <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">
             📌 메뉴 이동
           </label>
-          <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl">
+          <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
             <button
               onClick={() => setActiveView('newsletters')}
-              className={`py-1.5 text-xs font-bold rounded-lg transition px-2 text-center cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`py-1.5 text-[11px] font-bold rounded-lg transition px-1.5 text-center cursor-pointer flex items-center justify-center gap-1 ${
                 activeView === 'newsletters'
                   ? 'bg-white text-[#0891b2] shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
@@ -162,7 +163,7 @@ export default function Sidebar({
             </button>
             <button
               onClick={() => setActiveView('calculator')}
-              className={`py-1.5 text-xs font-bold rounded-lg transition px-2 text-center cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`py-1.5 text-[11px] font-bold rounded-lg transition px-1.5 text-center cursor-pointer flex items-center justify-center gap-1 ${
                 activeView === 'calculator'
                   ? 'bg-white text-[#0891b2] shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
@@ -170,6 +171,17 @@ export default function Sidebar({
             >
               <Calculator className="w-3.5 h-3.5" />
               실손계산기
+            </button>
+            <button
+              onClick={() => setActiveView('surgery-chat')}
+              className={`py-1.5 text-[11px] font-bold rounded-lg transition px-1.5 text-center cursor-pointer flex items-center justify-center gap-1 ${
+                activeView === 'surgery-chat'
+                  ? 'bg-white text-[#0891b2] shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <MessageCircleQuestion className="w-3.5 h-3.5" />
+              수술비챗봇
             </button>
           </div>
         </div>

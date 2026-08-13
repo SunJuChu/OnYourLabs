@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import MetricCard from './components/MetricCard';
 import NewsletterDetail from './components/NewsletterDetail';
 import ReimbursementCalculatorGate from './components/calculator/ReimbursementCalculatorGate';
+import SurgeryChatApp from './components/surgeryChat/SurgeryChatApp';
 import { Newsletter, GoogleUser, NewsletterSummary } from './types';
 import { 
   FileCheck, 
@@ -47,7 +48,7 @@ export default function App() {
 
   // --- States ---
   const [mode, setMode] = useState<'demo' | 'drive'>('demo');
-  const [activeView, setActiveView] = useState<'newsletters' | 'calculator'>('newsletters');
+  const [activeView, setActiveView] = useState<'newsletters' | 'calculator' | 'surgery-chat'>('newsletters');
   const [customClientId, setCustomClientId] = useState<string>(() => {
     return localStorage.getItem('STREAMLIT_GOOGLE_CLIENT_ID') || (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || '';
   });
@@ -518,6 +519,8 @@ export default function App() {
               onGoogleSignIn={() => handleGoogleSignIn()}
               onSwitchToDriveMode={() => setMode('drive')}
             />
+          ) : activeView === 'surgery-chat' ? (
+            <SurgeryChatApp />
           ) : (
           <>
           {/* Dashboard Title Panel */}

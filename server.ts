@@ -1,7 +1,9 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import dns from "dns";
+import { ragQuery } from "./lib/rag/rag";
 
 // Fix Node.js 17+ localhost address resolution issues
 dns.setDefaultResultOrder("ipv4first");
@@ -455,6 +457,26 @@ async function startServer() {
     }
   });
 
+
+  /**
+   * 수술비 약관 RAG 챗봇 질의응답 API
+   * OpenAI 임베딩 + Supabase(pgvector) 벡터검색 + gpt-4o-mini로 실제 약관 근거 기반 답변을 생성한다.
+   * (rag-pipeline 프로젝트의 서버 로직을 lib/rag/rag.ts 로 포트해서 재사용 — 별도 서버 없이 이 앱에 통합)
+   */
+  app.post("/api/rag/ask", async (req, res) => {
+    const { question } = req.body || {};
+    if (!question || !String(question).trim()) {
+      return res.status(400).json({ error: "질문이 비어있습니다." });
+    }
+
+    try {
+      const result = await ragQuery(String(question).trim());
+      res.json(result);
+    } catch (err: any) {
+      console.error("[RAG Error]", err?.message);
+      res.status(500).json({ error: "서버 오류: " + (err?.message || "알 수 없는 오류") });
+    }
+  });
 
   // 2. Vite Middleware Setup (Development vs Production)
   if (process.env.NODE_ENV !== "production") {
