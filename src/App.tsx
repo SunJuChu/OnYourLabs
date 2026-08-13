@@ -18,8 +18,21 @@ import {
   Layers,
   ChevronRight,
   Settings,
-  Menu
+  Menu,
+  ExternalLink,
+  Pill,
+  Stethoscope,
+  Hospital,
+  ClipboardCheck
 } from 'lucide-react';
+
+// 설계사가 청구/심사 실무에서 자주 참조하는 공식 외부 사이트 바로가기
+const REFERENCE_SITES = [
+  { label: '약학정보원', url: 'https://health.kr/', icon: Pill },
+  { label: '실손24', url: 'https://www.silson24.or.kr/claim/web/', icon: ClipboardCheck },
+  { label: '심평원 병원·약국 찾기', url: 'https://www.hira.or.kr/ra/hosp/getHealthMap.do?pgmid=HIRAA030002010000', icon: Hospital },
+  { label: '심평원 특수운영기관', url: 'https://www.hira.or.kr/ra/spclMgtAdmInfm/spclMgtAdmInfm.do?pgmid=HIRAA030003000000', icon: Stethoscope },
+];
 
 export default function App() {
   // --- Standard Page Frame vs Popup Detection ---
@@ -595,6 +608,26 @@ export default function App() {
               deltaType="neutral"
               icon={<Sparkles className="w-4 h-4 text-[#0891b2]" />}
             />
+          </div>
+
+          {/* 3-1. Reference Sites Quick Links (심사/청구 실무 참조용 공식 사이트 바로가기) */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl px-4 py-3 flex flex-wrap items-center gap-2 shadow-sm">
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest shrink-0">
+              🔗 참조 사이트
+            </span>
+            {REFERENCE_SITES.map(site => (
+              <a
+                key={site.label}
+                href={site.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-[#0891b2] text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition cursor-pointer"
+              >
+                <site.icon className="w-3.5 h-3.5" />
+                {site.label}
+                <ExternalLink className="w-3 h-3 text-slate-300" />
+              </a>
+            ))}
           </div>
 
           {/* 4. Column Split Workspace: Master list on left, Details/Iframe on right */}
