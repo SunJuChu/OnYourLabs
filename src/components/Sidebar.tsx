@@ -345,16 +345,40 @@ export default function Sidebar({
               <Layers className="w-3.5 h-3.5 text-slate-400" />
               분류 그룹 필터
             </span>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value as any)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 text-xs text-slate-800 cursor-pointer focus:outline-none focus:bg-white transition"
-            >
-              <option value="all">📁 전체 영역 보기 (All)</option>
-              <option value="생명보험">🧬 생명보험 (Life)</option>
-              <option value="손해보험">🛡️ 손해보험 (Non-Life)</option>
-              <option value="교육자료">📚 교육자료 (Education)</option>
-            </select>
+            <div className="grid grid-cols-2 gap-1.5">
+              {([
+                { value: 'all', label: '전체', icon: '📁' },
+                { value: '생명보험', label: '생명보험', icon: '🧬' },
+                { value: '손해보험', label: '손해보험', icon: '🛡️' },
+                { value: '교육자료', label: '교육자료', icon: '📚' },
+              ] as const).map(cat => (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`py-1.5 px-2 rounded-xl text-[11px] font-bold text-left transition cursor-pointer border ${
+                    selectedCategory === cat.value
+                      ? 'bg-[#0d2461] text-white border-[#0d2461] shadow-sm'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-[#0abde3] hover:text-[#0891b2]'
+                  }`}
+                >
+                  {cat.icon} {cat.label}
+                </button>
+              ))}
+              {/* 준비중 항목 */}
+              {[
+                { label: '소식지', icon: '📰' },
+                { label: '교안', icon: '📖' },
+              ].map(item => (
+                <button
+                  key={item.label}
+                  disabled
+                  className="py-1.5 px-2 rounded-xl text-[11px] font-bold text-left border bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed relative overflow-hidden"
+                >
+                  <span className="opacity-50">{item.icon} {item.label}</span>
+                  <span className="absolute top-0.5 right-1 text-[8px] font-black text-amber-500 bg-amber-50 px-1 py-0.5 rounded-full border border-amber-100 leading-none">준비중</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Insurer Filter */}
