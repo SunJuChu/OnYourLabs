@@ -12,6 +12,11 @@ interface Source {
   table?: string;
   surgery_name?: string;
   surgery_class?: string;
+  section?: string;
+  title?: string;
+  grade?: number | null;
+  amount?: string | null;
+  page?: number | null;
   similarity?: number;
 }
 
@@ -22,21 +27,66 @@ interface ChatMessage {
   isError?: boolean;
 }
 
-// 원클릭 예시 질문 (rag-pipeline 테스트 페이지에서 쓰던 예시를 그대로 재사용)
-const SAMPLE_QUESTIONS = [
-  '치질 수술은 몇 종 수술인가요?',
-  '유방 절제술은 별표61 기준으로 몇 종인가요?',
-  '삼성생명이랑 메리츠는 동시수술 지급 기준이 어떻게 다른가요?',
-  '요실금 수술은 누가 청구할 수 있나요?',
-  '보험사별로 척추 수술 종수를 비교해줘',
-];
+type Domain = 'surgery' | 'auto';
+
+const DOMAINS: Record<Domain, {
+  label: string;
+  endpoint: string;
+  title: string;
+  badge: string;
+  desc: string;
+  placeholder: string;
+  emptyHint: string;
+  samples: string[];
+}> = {
+  surgery: {
+    label: '수술비',
+    endpoint: '/api/rag/ask',
+    title: '수술비 약관 RAG 챗봇',
+    badge: '1-5종 / 1-8종 수술비 특약 전용',
+    desc: '10개 보험사 수술비 특약 약관 원문 기반으로 답변합니다.',
+    placeholder: '궁금한 수술비 약관 내용을 물어보세요',
+    emptyHint: '예: "OO수술 몇 종이야?", "삼성생명이랑 메리츠 동시수술 기준 비교"',
+    samples: [
+      '치질 수술은 몇 종 수술인가요?',
+      '유방 절제술은 별표61 기준으로 몇 종인가요?',
+      '삼성생명이랑 메리츠는 동시수술 지급 기준이 어떻게 다른가요?',
+      '요실금 수술은 누가 청구할 수 있나요?',
+      '보험사별로 척추 수술 종수를 비교해줘',
+    ],
+  },
+  auto: {
+    label: '자동차보험',
+    endpoint: '/api/rag/auto',
+    title: '자동차보험 약관 RAG 챗봇',
+    badge: 'KB손해보험 개인용 보통약관 별표',
+    desc: '대인·대물 지급기준, 과실상계, 동승자 감액, 자기신체사고, 상해·후유장애 급수표 기반으로 답변합니다.',
+    placeholder: '궁금한 자동차보험 약관 내용을 물어보세요',
+    emptyHint: '예: "대퇴골 골절 상해 몇 급?", "부상 위자료 5급은 얼마?"',
+    samples: [
+      '대퇴골 골절은 상해 몇 급인가요?',
+      '부상 위자료 5급은 얼마인가요?',
+      '사망 시 위자료는 나이에 따라 어떻게 달라지나요?',
+      '음주운전 차량에 동승하면 감액비율이 얼마인가요?',
+      '자기신체사고 후유장애 3급, 가입금액 1억원이면 얼마 받나요?',
+    ],
+  },
+};
+
+const formatSource = (s: Source) =>
+  s.title
+    ? `${s.title}${s.amount ? ` · ${s.amount}` : ''}${s.page ? ` (약관 ${s.page}쪽)` : ''}`
+    : `${s.category}${s.table ? ` (${s.table})` : ''}${s.surgery_name ? ` ${s.surgery_name}` : ''}${s.surgery_class ? ` [${s.surgery_class}종]` : ''}`;
 
 export default function SurgeryChatApp() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [domain, setDomain] = useState<Domain>('surgery');
+  const [histories, setHistories] = useState<Record<Domain, ChatMessage[]>>({ surgery: [], auto: [] });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [showInsurers, setShowInsurers] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const cfg = DOMAINS[domain];
+  const messages = histories[domain];
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -46,24 +96,27 @@ export default function SurgeryChatApp() {
     const q = question.trim();
     if (!q || loading) return;
 
-    setMessages(prev => [...prev, { role: 'user', text: q }]);
+    const target = domain;
+    const append = (m: ChatMessage) => setHistories(prev => ({ ...prev, [target]: [...prev[target], m] }));
+
+    append({ role: 'user', text: q });
     setInput('');
     setLoading(true);
 
     try {
-      const res = await fetch('/api/rag/ask', {
+      const res = await fetch(DOMAINS[target].endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q }),
       });
       const data = await res.json();
       if (data.error) {
-        setMessages(prev => [...prev, { role: 'bot', text: data.error, isError: true }]);
+        append({ role: 'bot', text: data.error, isError: true });
       } else {
-        setMessages(prev => [...prev, { role: 'bot', text: data.answer, sources: data.sources }]);
+        append({ role: 'bot', text: data.answer, sources: data.sources });
       }
     } catch (err: any) {
-      setMessages(prev => [...prev, { role: 'bot', text: '오류: ' + (err?.message || '요청에 실패했습니다.'), isError: true }]);
+      append({ role: 'bot', text: '오류: ' + (err?.message || '요청에 실패했습니다.'), isError: true });
     } finally {
       setLoading(false);
     }
@@ -78,24 +131,40 @@ export default function SurgeryChatApp() {
     <div className="flex flex-col h-full max-h-[calc(100vh-140px)] bg-white rounded-3xl border border-slate-200/60 shadow-sm overflow-hidden">
       {/* Header */}
       <div className="px-6 py-4 border-b border-slate-200/60 bg-gradient-to-r from-[#0d2461] to-[#0a1e52] shrink-0">
-        <h2 className="text-sm font-black text-white flex items-center gap-2 flex-wrap">
-          <MessageCircleQuestion className="w-4 h-4 text-[#0abde3] shrink-0" />
-          수술비 약관 RAG 챗봇
-          <span className="text-[10px] font-bold text-[#0abde3] bg-white/10 px-2 py-0.5 rounded-full">1-5종 / 1-8종 수술비 특약 전용</span>
-        </h2>
-        <div className="flex items-center gap-1.5 mt-1">
-          <p className="text-[11px] text-white/50 font-semibold">
-            10개 보험사 수술비 특약 약관 원문 기반으로 답변합니다.
-          </p>
-          <button
-            onClick={() => setShowInsurers(v => !v)}
-            className="text-[10px] font-extrabold text-[#0abde3] hover:text-white transition cursor-pointer flex items-center gap-0.5 shrink-0"
-          >
-            보험사 목록
-            <ChevronDown className={`w-3 h-3 transition-transform ${showInsurers ? 'rotate-180' : ''}`} />
-          </button>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h2 className="text-sm font-black text-white flex items-center gap-2 flex-wrap">
+            <MessageCircleQuestion className="w-4 h-4 text-[#0abde3] shrink-0" />
+            {cfg.title}
+            <span className="text-[10px] font-bold text-[#0abde3] bg-white/10 px-2 py-0.5 rounded-full">{cfg.badge}</span>
+          </h2>
+          <div className="flex bg-white/10 p-0.5 rounded-lg shrink-0">
+            {(Object.keys(DOMAINS) as Domain[]).map(d => (
+              <button
+                key={d}
+                onClick={() => !loading && setDomain(d)}
+                disabled={loading}
+                className={`text-[11px] font-extrabold px-3 py-1 rounded-md transition cursor-pointer disabled:cursor-default ${
+                  domain === d ? 'bg-white text-[#0d2461]' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {DOMAINS[d].label}
+              </button>
+            ))}
+          </div>
         </div>
-        {showInsurers && (
+        <div className="flex items-center gap-1.5 mt-1">
+          <p className="text-[11px] text-white/50 font-semibold">{cfg.desc}</p>
+          {domain === 'surgery' && (
+            <button
+              onClick={() => setShowInsurers(v => !v)}
+              className="text-[10px] font-extrabold text-[#0abde3] hover:text-white transition cursor-pointer flex items-center gap-0.5 shrink-0"
+            >
+              보험사 목록
+              <ChevronDown className={`w-3 h-3 transition-transform ${showInsurers ? 'rotate-180' : ''}`} />
+            </button>
+          )}
+        </div>
+        {domain === 'surgery' && showInsurers && (
           <div className="mt-2 flex flex-wrap gap-1">
             {COVERED_INSURERS.map(name => (
               <span key={name} className="text-[9px] font-bold text-white/70 bg-white/10 px-1.5 py-0.5 rounded-full">
@@ -111,7 +180,7 @@ export default function SurgeryChatApp() {
 
       {/* Sample questions */}
       <div className="flex flex-wrap gap-1.5 px-5 py-3 border-b border-slate-100 bg-slate-50/50 shrink-0">
-        {SAMPLE_QUESTIONS.map(q => (
+        {cfg.samples.map(q => (
           <button
             key={q}
             onClick={() => ask(q)}
@@ -128,8 +197,8 @@ export default function SurgeryChatApp() {
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 gap-2 py-10">
             <FileSearch className="w-8 h-8 text-slate-300" />
-            <p className="text-xs font-semibold">궁금한 수술비 약관 내용을 물어보세요.</p>
-            <p className="text-[10px] text-slate-350">예: "OO수술 몇 종이야?", "삼성생명이랑 메리츠 동시수술 기준 비교"</p>
+            <p className="text-xs font-semibold">{cfg.placeholder}.</p>
+            <p className="text-[10px] text-slate-350">{cfg.emptyHint}</p>
           </div>
         )}
 
@@ -149,9 +218,7 @@ export default function SurgeryChatApp() {
                 <div className="mt-2 pt-2 border-t border-slate-200/70 text-[10px] text-slate-500 font-semibold space-y-0.5">
                   <p className="text-slate-400 font-bold">참고 문서</p>
                   {m.sources.slice(0, 8).map((s, si) => (
-                    <p key={si}>
-                      • {s.category}{s.table ? ` (${s.table})` : ''}{s.surgery_name ? ` ${s.surgery_name}` : ''}{s.surgery_class ? ` [${s.surgery_class}종]` : ''}
-                    </p>
+                    <p key={si}>• {formatSource(s)}</p>
                   ))}
                 </div>
               )}
@@ -175,7 +242,7 @@ export default function SurgeryChatApp() {
           type="text"
           value={input}
           onChange={e => setInput(e.target.value)}
-          placeholder="궁금한 수술비 약관 내용을 물어보세요"
+          placeholder={cfg.placeholder}
           disabled={loading}
           className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0abde3] focus:bg-white transition disabled:opacity-60"
         />

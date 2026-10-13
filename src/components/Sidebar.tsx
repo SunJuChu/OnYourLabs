@@ -181,7 +181,7 @@ export default function Sidebar({
               }`}
             >
               <MessageCircleQuestion className="w-3.5 h-3.5" />
-              수술비챗봇
+              약관챗봇
             </button>
           </div>
         </div>

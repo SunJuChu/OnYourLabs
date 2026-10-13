@@ -4,6 +4,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import dns from "dns";
 import { ragQuery } from "./lib/rag/rag";
+import autoRagHandler from "./api/rag/auto";
 
 // Fix Node.js 17+ localhost address resolution issues
 dns.setDefaultResultOrder("ipv4first");
@@ -477,6 +478,9 @@ async function startServer() {
       res.status(500).json({ error: "서버 오류: " + (err?.message || "알 수 없는 오류") });
     }
   });
+
+  // 자동차보험 약관 RAG (Vercel 함수와 같은 핸들러를 그대로 사용)
+  app.post("/api/rag/auto", (req, res) => autoRagHandler(req as any, res as any));
 
   // 2. Vite Middleware Setup (Development vs Production)
   if (process.env.NODE_ENV !== "production") {
