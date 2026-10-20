@@ -28,11 +28,14 @@ interface Doc {
 export interface RagResult {
   answer: string;
   sources: Array<Record<string, any>>;
+  // 어느 경로로 답했는지 화면에 보여서, 글자 검색이 조용히 실패하고 벡터검색으로 넘어간 경우를 바로 알 수 있게 한다.
+  route?: 'text' | 'vector';
+  lookupError?: string;
 }
 
 // "OO수술 몇 종?" 류 단순 조회: 임베딩/LLM 없이 surgery_name·content ILIKE 매칭만으로 바로 답한다.
 // 결과가 없으면 null을 돌려주고, 호출부는 기존 벡터검색+LLM 경로로 폴백한다.
-async function trySimpleLookup(question: string): Promise<RagResult | null> {
+async function trySimpleLookup(question: string, errors: string[]): Promise<RagResult | null> {
   if (!isSimpleClassQuestion(question)) return null;
 
   const term = extractSurgeryTerm(question);
@@ -58,7 +61,10 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/surgery_documents?${params.toString()}`, {
       headers: getSupabaseHeaders(),
     });
-    if (!res.ok) continue; // 조회 실패 시 다음 후보로, 다 실패하면 벡터검색 경로로 폴백
+    if (!res.ok) {
+      errors.push(`${res.status} ${(await res.text()).slice(0, 200)}`);
+      continue;
+    } // 조회 실패 시 다음 후보로, 다 실패하면 벡터검색 경로로 폴백
     const rows: Doc[] = await res.json();
     if (!rows.length) continue;
 
@@ -134,8 +140,9 @@ export async function ragQuery(question: string): Promise<RagResult> {
     throw new Error('RAG 환경변수(OPENAI_API_KEY / SUPABASE_URL / SUPABASE_SECRET_KEY)가 설정되어 있지 않습니다.');
   }
 
-  const simple = await trySimpleLookup(question);
-  if (simple) return simple;
+  const lookupErrors: string[] = [];
+  const simple = await trySimpleLookup(question, lookupErrors);
+  if (simple) return { ...simple, route: 'text' };
 
   const embRes = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
@@ -179,5 +186,7 @@ export async function ragQuery(question: string): Promise<RagResult> {
       surgery_class: d.surgery_class,
       similarity: d.similarity,
     })),
+    route: 'vector',
+    lookupError: lookupErrors.length ? lookupErrors[0] : undefined,
   };
 }

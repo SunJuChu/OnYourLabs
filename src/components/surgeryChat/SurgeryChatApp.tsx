@@ -25,6 +25,8 @@ interface ChatMessage {
   text: string;
   sources?: Source[];
   isError?: boolean;
+  route?: 'text' | 'vector';
+  lookupError?: string;
 }
 
 type Domain = 'surgery' | 'auto';
@@ -113,7 +115,7 @@ export default function SurgeryChatApp() {
       if (data.error) {
         append({ role: 'bot', text: data.error, isError: true });
       } else {
-        append({ role: 'bot', text: data.answer, sources: data.sources });
+        append({ role: 'bot', text: data.answer, sources: data.sources, route: data.route, lookupError: data.lookupError });
       }
     } catch (err: any) {
       append({ role: 'bot', text: '오류: ' + (err?.message || '요청에 실패했습니다.'), isError: true });
@@ -216,8 +218,11 @@ export default function SurgeryChatApp() {
               {m.text}
               {m.sources && m.sources.length > 0 && (
                 <div className="mt-2 pt-2 border-t border-slate-200/70 text-[10px] text-slate-500 font-semibold space-y-0.5">
-                  <p className="text-slate-400 font-bold">참고 문서</p>
-                  {m.sources.slice(0, 8).map((s, si) => (
+                  <p className="text-slate-400 font-bold">
+                    참고 문서{m.route ? (m.route === 'text' ? ' · 글자 검색' : ' · 의미 검색') : ''}
+                  </p>
+                  {m.lookupError && <p className="text-rose-400">글자 검색 실패: {m.lookupError}</p>}
+                  {m.sources.slice(0, 10).map((s, si) => (
                     <p key={si}>• {formatSource(s)}</p>
                   ))}
                 </div>
