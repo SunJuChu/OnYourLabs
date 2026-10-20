@@ -43,10 +43,11 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
 
   for (const candidate of candidateTerms(term)) {
     // 수술명 칸이 비어 있고 content에만 묶여 들어간 행도 잡기 위해 두 칸을 같이 검색한다.
-    const pattern = candidate.replace(/["\\]/g, '');
+    // PostgREST or=() 문법에서 예약된 문자(쉼표·괄호·점·콜론·따옴표)는 빼서 문법 오류로 조용히 실패하지 않게 한다.
+    const pattern = candidate.replace(/[",().:\\]/g, '');
     const params = new URLSearchParams({
       select: 'category,table,surgery_name,surgery_class,content',
-      or: `(surgery_name.ilike."*${pattern}*",content.ilike."*${pattern}*")`,
+      or: `(surgery_name.ilike.*${pattern}*,content.ilike.*${pattern}*)`,
       order: 'category.asc',
       limit: '30',
     });

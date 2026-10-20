@@ -150,10 +150,11 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
   const companies = detectCompanies(question);
 
   for (const candidate of candidateTerms(term)) {
-    const pattern = candidate.replace(/["\\]/g, '');
+    // PostgREST or=() 문법에서 예약된 문자(쉼표·괄호·점·콜론·따옴표)는 빼서 문법 오류로 조용히 실패하지 않게 한다.
+    const pattern = candidate.replace(/[",().:\\]/g, '');
     const params = new URLSearchParams({
       select: 'category,table,surgery_name,surgery_class,content',
-      or: `(surgery_name.ilike."*${pattern}*",content.ilike."*${pattern}*")`,
+      or: `(surgery_name.ilike.*${pattern}*,content.ilike.*${pattern}*)`,
       order: 'category.asc',
       limit: '30',
     });
