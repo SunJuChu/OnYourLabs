@@ -40,10 +40,13 @@ const COMPLEX_HINTS = [
 
 const SIMPLE_CLASS_QUESTION = /몇\s*종/;
 
+const KEYWORD_ONLY_MAX_LENGTH = 15;
+
 function isSimpleClassQuestion(question: string): boolean {
-  if (!SIMPLE_CLASS_QUESTION.test(question)) return false;
   if (COMPLEX_HINTS.some(hint => question.includes(hint))) return false;
-  return true;
+  if (SIMPLE_CLASS_QUESTION.test(question)) return true;
+  const term = extractSurgeryTerm(question);
+  return term.length > 0 && term.length <= KEYWORD_ONLY_MAX_LENGTH && term.split(/\s+/).length <= 3;
 }
 
 function extractSurgeryTerm(question: string): string {
@@ -56,6 +59,7 @@ function extractSurgeryTerm(question: string): string {
   term = term
     .replace(/몇\s*종류?\s*(수술)?\s*(인가요|이에요|입니다|이야|인지|입니까|일까요|되나요|인가|이니)?\s*\??/g, ' ')
     .replace(/[?？!!.,]/g, ' ')
+    .replace(/(알려\s*줘|알려\s*주세요|뭐야|뭐예요|궁금해요?)\s*$/, ' ')
     .trim();
 
   term = term.replace(/(은|는|이|가|의|을|를)\s*$/, '').trim();
@@ -66,7 +70,13 @@ function extractSurgeryTerm(question: string): string {
 const SYNONYMS: Record<string, string> = {
   치질: '치핵',
   축농증: '부비동',
+  초자체: '유리체',
+  맹장: '충수',
+  쓸개: '담낭',
+  디스크: '추간판',
 };
+
+const STOP_TOKENS = ['수술', '관혈', '관혈수술', '종'];
 
 function candidateTerms(term: string): string[] {
   const candidates: string[] = [];
@@ -88,7 +98,21 @@ function candidateTerms(term: string): string[] {
     push(noSurgery.replace(/\s+/g, ''));
   }
 
+  for (const t of withSynonyms) {
+    for (const token of t.split(/\s+/)) {
+      const v = token.replace(/수술$/, '');
+      if (!STOP_TOKENS.includes(v)) push(v);
+    }
+  }
+
   return candidates;
+}
+
+function matchedSnippet(content: string, term: string): string {
+  const sentences = content.split(/(?<=[.。])\s+/);
+  const hits = sentences.filter(s => s.includes(term));
+  const text = (hits.length ? hits : [content]).join(' ');
+  return text.length > 200 ? text.slice(0, 200) + '…' : text;
 }
 
 // ── rag ───────────────────────────────────────────────────
@@ -114,9 +138,12 @@ interface Doc {
 interface RagResult {
   answer: string;
   sources: Array<Record<string, any>>;
+  // 어느 경로로 답했는지 화면에 보여서, 글자 검색이 조용히 실패하고 벡터검색으로 넘어간 경우를 바로 알 수 있게 한다.
+  route?: 'text' | 'vector';
+  lookupError?: string;
 }
 
-async function trySimpleLookup(question: string): Promise<RagResult | null> {
+async function trySimpleLookup(question: string, errors: string[]): Promise<RagResult | null> {
   if (!isSimpleClassQuestion(question)) return null;
 
   const term = extractSurgeryTerm(question);
@@ -126,9 +153,11 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
   const companies = detectCompanies(question);
 
   for (const candidate of candidateTerms(term)) {
+    // PostgREST or=() 문법에서 예약된 문자(쉼표·괄호·점·콜론·따옴표)는 빼서 문법 오류로 조용히 실패하지 않게 한다.
+    const pattern = candidate.replace(/[",().:\\]/g, '');
     const params = new URLSearchParams({
-      select: 'category,table,surgery_name,surgery_class',
-      surgery_name: `ilike.*${candidate}*`,
+      select: 'category,table,surgery_name,surgery_class,content',
+      or: `(surgery_name.ilike.*${pattern}*,content.ilike.*${pattern}*)`,
       order: 'category.asc',
       limit: '30',
     });
@@ -139,11 +168,21 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/surgery_documents?${params.toString()}`, {
       headers: getSupabaseHeaders(),
     });
-    if (!res.ok) continue;
-    const rows = await res.json();
+    if (!res.ok) {
+      errors.push(`${res.status} ${(await res.text()).slice(0, 200)}`);
+      continue;
+    }
+    const rows: Doc[] = await res.json();
     if (!rows.length) continue;
 
-    const lines = rows.map((r: Doc) => `${r.category}${r.table ? ' (' + r.table + ')' : ''}: ${r.surgery_name} → ${r.surgery_class}종 수술`);
+    const nameHit = (r: Doc) => Number(!!r.surgery_name?.includes(pattern));
+    rows.sort((a, b) => nameHit(b) - nameHit(a));
+
+    const lines = rows.map((r: Doc) => {
+      const where = `${r.category}${r.table ? ' (' + r.table + ')' : ''}`;
+      if (nameHit(r) && r.surgery_class) return `${where}: ${r.surgery_name} → ${r.surgery_class}종 수술`;
+      return `${where}: ${matchedSnippet(r.content || '', pattern)}`;
+    });
     return {
       answer: `[텍스트 매칭 결과, "${candidate}" 검색]\n` + lines.join('\n'),
       sources: rows.map((r: Doc) => ({ category: r.category, table: r.table, surgery_name: r.surgery_name, surgery_class: r.surgery_class })),
@@ -156,9 +195,9 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
 async function matchDocs(embedding: number[], question: string): Promise<Doc[]> {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const companies = detectCompanies(question);
-  const compareAll = isCompareAllIntent(question);
-  const needsWideFetch = companies.length > 0 || compareAll;
-  const matchCount = companies.length > 1 ? Math.min(100, companies.length * 30) : needsWideFetch ? 40 : 5;
+  // 보험사를 지정하지 않은 질문은 한 회사 문서가 상위권을 독차지하지 않도록 전체 보험사를 고르게 보여준다.
+  const compareAll = companies.length === 0 || isCompareAllIntent(question);
+  const matchCount = companies.length > 1 ? Math.min(100, companies.length * 30) : companies.length === 0 ? 100 : 40;
 
   const matchRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_surgery_docs`, {
     method: 'POST',
@@ -192,8 +231,6 @@ async function matchDocs(embedding: number[], question: string): Promise<Doc[]> 
       }
     }
     docs = rounded;
-  } else {
-    docs = docs.slice(0, 5);
   }
 
   return docs;
@@ -205,8 +242,9 @@ async function ragQuery(question: string): Promise<RagResult> {
     throw new Error('RAG 환경변수(OPENAI_API_KEY / SUPABASE_URL / SUPABASE_SECRET_KEY)가 설정되어 있지 않습니다.');
   }
 
-  const simple = await trySimpleLookup(question);
-  if (simple) return simple;
+  const lookupErrors: string[] = [];
+  const simple = await trySimpleLookup(question, lookupErrors);
+  if (simple) return { ...simple, route: 'text' };
 
   const embRes = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
@@ -228,11 +266,11 @@ async function ragQuery(question: string): Promise<RagResult> {
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + OPENAI_API_KEY },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 600,
+      max_tokens: 1000,
       messages: [
         {
           role: 'system',
-          content: `당신은 수술비 보험 약관 전문 AI 어시스턴트입니다. 아래 약관 데이터만 근거로 답변하세요. 수술 종수를 먼저 명시하고, 어느 보험사와 어느 표(참고 문서에 적힌 괄호 안 표 이름) 기준인지 정확히 밝히세요. 표 이름을 추측하지 말고 참고 문서에 적힌 그대로만 사용하세요. 3~5문장으로 답변하세요.\n\n[약관 데이터]\n${ctx}`,
+          content: `당신은 수술비 보험 약관 전문 AI 어시스턴트입니다. 아래 약관 데이터만 근거로 답변하세요. 수술 종수를 먼저 명시하고, 어느 보험사와 어느 표(참고 문서에 적힌 괄호 안 표 이름) 기준인지 정확히 밝히세요. 표 이름을 추측하지 말고 참고 문서에 적힌 그대로만 사용하세요. 여러 보험사 문서가 있으면 보험사별로 한 줄씩 정리하고, 한 보험사만 있으면 3~5문장으로 답변하세요.\n\n[약관 데이터]\n${ctx}`,
         },
         { role: 'user', content: question },
       ],
@@ -250,6 +288,8 @@ async function ragQuery(question: string): Promise<RagResult> {
       surgery_class: d.surgery_class,
       similarity: d.similarity,
     })),
+    route: 'vector',
+    lookupError: lookupErrors.length ? lookupErrors[0] : undefined,
   };
 }
 

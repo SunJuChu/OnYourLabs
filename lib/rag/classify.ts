@@ -13,10 +13,14 @@ const COMPLEX_HINTS = [
 
 const SIMPLE_CLASS_QUESTION = /몇\s*종/;
 
+// "유리체", "현대해상 유리체 수술"처럼 수술명 키워드만 던진 짧은 질문도 단순 조회로 본다.
+const KEYWORD_ONLY_MAX_LENGTH = 15;
+
 export function isSimpleClassQuestion(question: string): boolean {
-  if (!SIMPLE_CLASS_QUESTION.test(question)) return false;
   if (COMPLEX_HINTS.some(hint => question.includes(hint))) return false;
-  return true;
+  if (SIMPLE_CLASS_QUESTION.test(question)) return true;
+  const term = extractSurgeryTerm(question);
+  return term.length > 0 && term.length <= KEYWORD_ONLY_MAX_LENGTH && term.split(/\s+/).length <= 3;
 }
 
 // 질문에서 보험사명/불필요한 조사·어미를 제거해서 surgery_name 검색에 쓸 핵심어를 뽑아낸다.
@@ -31,6 +35,7 @@ export function extractSurgeryTerm(question: string): string {
   term = term
     .replace(/몇\s*종류?\s*(수술)?\s*(인가요|이에요|입니다|이야|인지|입니까|일까요|되나요|인가|이니)?\s*\??/g, ' ')
     .replace(/[?？!!.,]/g, ' ')
+    .replace(/(알려\s*줘|알려\s*주세요|뭐야|뭐예요|궁금해요?)\s*$/, ' ')
     .trim();
 
   // 흔한 조사 제거 (문장 끝쪽부터)
@@ -45,7 +50,14 @@ export function extractSurgeryTerm(question: string): string {
 const SYNONYMS: Record<string, string> = {
   치질: '치핵',
   축농증: '부비동',
+  초자체: '유리체',
+  맹장: '충수',
+  쓸개: '담낭',
+  디스크: '추간판',
 };
+
+// 단어별로 쪼개 검색할 때, 거의 모든 행에 걸려서 의미 없는 단어는 뺀다.
+const STOP_TOKENS = ['수술', '관혈', '관혈수술', '종'];
 
 // surgery_name 표기가 "백내장(白內障), 수정체(水晶體) 관혈수술"처럼 한자/쉼표가 섞여 있어서
 // 질문에서 뽑은 term을 그대로 ILIKE 하면 못 찾는 경우가 많다.
@@ -70,5 +82,22 @@ export function candidateTerms(term: string): string[] {
     push(noSurgery.replace(/\s+/g, ''));
   }
 
+  // 문구 전체로 못 찾으면 단어별로 시도 ("유리체 관혈 수술" → "유리체")
+  for (const t of withSynonyms) {
+    for (const token of t.split(/\s+/)) {
+      const v = token.replace(/수술$/, '');
+      if (!STOP_TOKENS.includes(v)) push(v);
+    }
+  }
+
   return candidates;
+}
+
+// 시각기 63~78항처럼 여러 수술이 content 한 덩어리로 묶여 surgery_name이 비어 있는 행은
+// 검색어가 들어있는 문장만 잘라서 보여준다.
+export function matchedSnippet(content: string, term: string): string {
+  const sentences = content.split(/(?<=[.。])\s+/);
+  const hits = sentences.filter(s => s.includes(term));
+  const text = (hits.length ? hits : [content]).join(' ');
+  return text.length > 200 ? text.slice(0, 200) + '…' : text;
 }

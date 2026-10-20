@@ -4,7 +4,7 @@
 // - env 로딩 방식만 다름: rag-pipeline은 자체 .env 파서를 쓰지만, 여기서는 OnYourLabs의 기존 관행대로
 //   process.env를 그대로 읽는다 (Vercel은 대시보드 env를 자동 주입하고, 로컬은 server.ts의 dotenv/config가 처리).
 import { detectCompanies, isCompareAllIntent } from './insurers';
-import { isSimpleClassQuestion, extractSurgeryTerm, candidateTerms } from './classify';
+import { isSimpleClassQuestion, extractSurgeryTerm, candidateTerms, matchedSnippet } from './classify';
 
 function getSupabaseHeaders() {
   const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
@@ -28,11 +28,14 @@ interface Doc {
 export interface RagResult {
   answer: string;
   sources: Array<Record<string, any>>;
+  // 어느 경로로 답했는지 화면에 보여서, 글자 검색이 조용히 실패하고 벡터검색으로 넘어간 경우를 바로 알 수 있게 한다.
+  route?: 'text' | 'vector';
+  lookupError?: string;
 }
 
-// "OO수술 몇 종?" 류 단순 조회: 임베딩/LLM 없이 surgery_name ILIKE 매칭만으로 바로 답한다.
+// "OO수술 몇 종?" 류 단순 조회: 임베딩/LLM 없이 surgery_name·content ILIKE 매칭만으로 바로 답한다.
 // 결과가 없으면 null을 돌려주고, 호출부는 기존 벡터검색+LLM 경로로 폴백한다.
-async function trySimpleLookup(question: string): Promise<RagResult | null> {
+async function trySimpleLookup(question: string, errors: string[]): Promise<RagResult | null> {
   if (!isSimpleClassQuestion(question)) return null;
 
   const term = extractSurgeryTerm(question);
@@ -42,9 +45,12 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
   const companies = detectCompanies(question);
 
   for (const candidate of candidateTerms(term)) {
+    // 수술명 칸이 비어 있고 content에만 묶여 들어간 행도 잡기 위해 두 칸을 같이 검색한다.
+    // PostgREST or=() 문법에서 예약된 문자(쉼표·괄호·점·콜론·따옴표)는 빼서 문법 오류로 조용히 실패하지 않게 한다.
+    const pattern = candidate.replace(/[",().:\\]/g, '');
     const params = new URLSearchParams({
-      select: 'category,table,surgery_name,surgery_class',
-      surgery_name: `ilike.*${candidate}*`,
+      select: 'category,table,surgery_name,surgery_class,content',
+      or: `(surgery_name.ilike.*${pattern}*,content.ilike.*${pattern}*)`,
       order: 'category.asc',
       limit: '30',
     });
@@ -55,11 +61,22 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/surgery_documents?${params.toString()}`, {
       headers: getSupabaseHeaders(),
     });
-    if (!res.ok) continue; // 조회 실패 시 다음 후보로, 다 실패하면 벡터검색 경로로 폴백
-    const rows = await res.json();
+    if (!res.ok) {
+      errors.push(`${res.status} ${(await res.text()).slice(0, 200)}`);
+      continue;
+    } // 조회 실패 시 다음 후보로, 다 실패하면 벡터검색 경로로 폴백
+    const rows: Doc[] = await res.json();
     if (!rows.length) continue;
 
-    const lines = rows.map((r: Doc) => `${r.category}${r.table ? ' (' + r.table + ')' : ''}: ${r.surgery_name} → ${r.surgery_class}종 수술`);
+    // 수술명에서 직접 걸린 행을 먼저 보여준다.
+    const nameHit = (r: Doc) => Number(!!r.surgery_name?.includes(pattern));
+    rows.sort((a, b) => nameHit(b) - nameHit(a));
+
+    const lines = rows.map((r: Doc) => {
+      const where = `${r.category}${r.table ? ' (' + r.table + ')' : ''}`;
+      if (nameHit(r) && r.surgery_class) return `${where}: ${r.surgery_name} → ${r.surgery_class}종 수술`;
+      return `${where}: ${matchedSnippet(r.content || '', pattern)}`;
+    });
     return {
       answer: `[텍스트 매칭 결과, "${candidate}" 검색]\n` + lines.join('\n'),
       sources: rows.map((r: Doc) => ({ category: r.category, table: r.table, surgery_name: r.surgery_name, surgery_class: r.surgery_class })),
@@ -72,13 +89,13 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
 // 벡터검색 결과가 특정 보험사 쪽으로 쏠리는 걸 막기 위한 보험사 인지형 검색.
 // - 질문에 특정 보험사가 명시돼 있으면: 해당 보험사 문서만 필터링.
 // - "보험사별 비교"류 질문이면: 넉넉히 뽑은 뒤 보험사별로 라운드로빈해서 고르게 담는다.
-// - 그 외 일반 질문: 기존처럼 top-k 그대로.
+// - 보험사를 지정하지 않은 일반 질문: 같은 방식으로 전체 보험사에서 하나씩 골라 최대 10개.
 async function matchDocs(embedding: number[], question: string): Promise<Doc[]> {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const companies = detectCompanies(question);
-  const compareAll = isCompareAllIntent(question);
-  const needsWideFetch = companies.length > 0 || compareAll;
-  const matchCount = companies.length > 1 ? Math.min(100, companies.length * 30) : needsWideFetch ? 40 : 5;
+  // 보험사를 지정하지 않은 질문은 한 회사 문서가 상위권을 독차지하지 않도록 전체 보험사를 고르게 보여준다.
+  const compareAll = companies.length === 0 || isCompareAllIntent(question);
+  const matchCount = companies.length > 1 ? Math.min(100, companies.length * 30) : companies.length === 0 ? 100 : 40;
 
   const matchRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_surgery_docs`, {
     method: 'POST',
@@ -112,8 +129,6 @@ async function matchDocs(embedding: number[], question: string): Promise<Doc[]> 
       }
     }
     docs = rounded;
-  } else {
-    docs = docs.slice(0, 5);
   }
 
   return docs;
@@ -125,8 +140,9 @@ export async function ragQuery(question: string): Promise<RagResult> {
     throw new Error('RAG 환경변수(OPENAI_API_KEY / SUPABASE_URL / SUPABASE_SECRET_KEY)가 설정되어 있지 않습니다.');
   }
 
-  const simple = await trySimpleLookup(question);
-  if (simple) return simple;
+  const lookupErrors: string[] = [];
+  const simple = await trySimpleLookup(question, lookupErrors);
+  if (simple) return { ...simple, route: 'text' };
 
   const embRes = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
@@ -148,11 +164,11 @@ export async function ragQuery(question: string): Promise<RagResult> {
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + OPENAI_API_KEY },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 600,
+      max_tokens: 1000,
       messages: [
         {
           role: 'system',
-          content: `당신은 수술비 보험 약관 전문 AI 어시스턴트입니다. 아래 약관 데이터만 근거로 답변하세요. 수술 종수를 먼저 명시하고, 어느 보험사와 어느 표(참고 문서에 적힌 괄호 안 표 이름) 기준인지 정확히 밝히세요. 표 이름을 추측하지 말고 참고 문서에 적힌 그대로만 사용하세요. 3~5문장으로 답변하세요.\n\n[약관 데이터]\n${ctx}`,
+          content: `당신은 수술비 보험 약관 전문 AI 어시스턴트입니다. 아래 약관 데이터만 근거로 답변하세요. 수술 종수를 먼저 명시하고, 어느 보험사와 어느 표(참고 문서에 적힌 괄호 안 표 이름) 기준인지 정확히 밝히세요. 표 이름을 추측하지 말고 참고 문서에 적힌 그대로만 사용하세요. 여러 보험사 문서가 있으면 보험사별로 한 줄씩 정리하고, 한 보험사만 있으면 3~5문장으로 답변하세요.\n\n[약관 데이터]\n${ctx}`,
         },
         { role: 'user', content: question },
       ],
@@ -170,5 +186,7 @@ export async function ragQuery(question: string): Promise<RagResult> {
       surgery_class: d.surgery_class,
       similarity: d.similarity,
     })),
+    route: 'vector',
+    lookupError: lookupErrors.length ? lookupErrors[0] : undefined,
   };
 }
