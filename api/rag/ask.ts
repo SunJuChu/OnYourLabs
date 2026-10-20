@@ -40,10 +40,13 @@ const COMPLEX_HINTS = [
 
 const SIMPLE_CLASS_QUESTION = /몇\s*종/;
 
+const KEYWORD_ONLY_MAX_LENGTH = 15;
+
 function isSimpleClassQuestion(question: string): boolean {
-  if (!SIMPLE_CLASS_QUESTION.test(question)) return false;
   if (COMPLEX_HINTS.some(hint => question.includes(hint))) return false;
-  return true;
+  if (SIMPLE_CLASS_QUESTION.test(question)) return true;
+  const term = extractSurgeryTerm(question);
+  return term.length > 0 && term.length <= KEYWORD_ONLY_MAX_LENGTH && term.split(/\s+/).length <= 3;
 }
 
 function extractSurgeryTerm(question: string): string {
@@ -56,6 +59,7 @@ function extractSurgeryTerm(question: string): string {
   term = term
     .replace(/몇\s*종류?\s*(수술)?\s*(인가요|이에요|입니다|이야|인지|입니까|일까요|되나요|인가|이니)?\s*\??/g, ' ')
     .replace(/[?？!!.,]/g, ' ')
+    .replace(/(알려\s*줘|알려\s*주세요|뭐야|뭐예요|궁금해요?)\s*$/, ' ')
     .trim();
 
   term = term.replace(/(은|는|이|가|의|을|를)\s*$/, '').trim();
@@ -66,7 +70,13 @@ function extractSurgeryTerm(question: string): string {
 const SYNONYMS: Record<string, string> = {
   치질: '치핵',
   축농증: '부비동',
+  초자체: '유리체',
+  맹장: '충수',
+  쓸개: '담낭',
+  디스크: '추간판',
 };
+
+const STOP_TOKENS = ['수술', '관혈', '관혈수술', '종'];
 
 function candidateTerms(term: string): string[] {
   const candidates: string[] = [];
@@ -88,7 +98,21 @@ function candidateTerms(term: string): string[] {
     push(noSurgery.replace(/\s+/g, ''));
   }
 
+  for (const t of withSynonyms) {
+    for (const token of t.split(/\s+/)) {
+      const v = token.replace(/수술$/, '');
+      if (!STOP_TOKENS.includes(v)) push(v);
+    }
+  }
+
   return candidates;
+}
+
+function matchedSnippet(content: string, term: string): string {
+  const sentences = content.split(/(?<=[.。])\s+/);
+  const hits = sentences.filter(s => s.includes(term));
+  const text = (hits.length ? hits : [content]).join(' ');
+  return text.length > 200 ? text.slice(0, 200) + '…' : text;
 }
 
 // ── rag ───────────────────────────────────────────────────
@@ -126,9 +150,10 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
   const companies = detectCompanies(question);
 
   for (const candidate of candidateTerms(term)) {
+    const pattern = candidate.replace(/["\\]/g, '');
     const params = new URLSearchParams({
-      select: 'category,table,surgery_name,surgery_class',
-      surgery_name: `ilike.*${candidate}*`,
+      select: 'category,table,surgery_name,surgery_class,content',
+      or: `(surgery_name.ilike."*${pattern}*",content.ilike."*${pattern}*")`,
       order: 'category.asc',
       limit: '30',
     });
@@ -140,10 +165,17 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
       headers: getSupabaseHeaders(),
     });
     if (!res.ok) continue;
-    const rows = await res.json();
+    const rows: Doc[] = await res.json();
     if (!rows.length) continue;
 
-    const lines = rows.map((r: Doc) => `${r.category}${r.table ? ' (' + r.table + ')' : ''}: ${r.surgery_name} → ${r.surgery_class}종 수술`);
+    const nameHit = (r: Doc) => Number(!!r.surgery_name?.includes(pattern));
+    rows.sort((a, b) => nameHit(b) - nameHit(a));
+
+    const lines = rows.map((r: Doc) => {
+      const where = `${r.category}${r.table ? ' (' + r.table + ')' : ''}`;
+      if (nameHit(r) && r.surgery_class) return `${where}: ${r.surgery_name} → ${r.surgery_class}종 수술`;
+      return `${where}: ${matchedSnippet(r.content || '', pattern)}`;
+    });
     return {
       answer: `[텍스트 매칭 결과, "${candidate}" 검색]\n` + lines.join('\n'),
       sources: rows.map((r: Doc) => ({ category: r.category, table: r.table, surgery_name: r.surgery_name, surgery_class: r.surgery_class })),

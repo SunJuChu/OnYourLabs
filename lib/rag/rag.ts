@@ -4,7 +4,7 @@
 // - env 로딩 방식만 다름: rag-pipeline은 자체 .env 파서를 쓰지만, 여기서는 OnYourLabs의 기존 관행대로
 //   process.env를 그대로 읽는다 (Vercel은 대시보드 env를 자동 주입하고, 로컬은 server.ts의 dotenv/config가 처리).
 import { detectCompanies, isCompareAllIntent } from './insurers';
-import { isSimpleClassQuestion, extractSurgeryTerm, candidateTerms } from './classify';
+import { isSimpleClassQuestion, extractSurgeryTerm, candidateTerms, matchedSnippet } from './classify';
 
 function getSupabaseHeaders() {
   const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
@@ -30,7 +30,7 @@ export interface RagResult {
   sources: Array<Record<string, any>>;
 }
 
-// "OO수술 몇 종?" 류 단순 조회: 임베딩/LLM 없이 surgery_name ILIKE 매칭만으로 바로 답한다.
+// "OO수술 몇 종?" 류 단순 조회: 임베딩/LLM 없이 surgery_name·content ILIKE 매칭만으로 바로 답한다.
 // 결과가 없으면 null을 돌려주고, 호출부는 기존 벡터검색+LLM 경로로 폴백한다.
 async function trySimpleLookup(question: string): Promise<RagResult | null> {
   if (!isSimpleClassQuestion(question)) return null;
@@ -42,9 +42,11 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
   const companies = detectCompanies(question);
 
   for (const candidate of candidateTerms(term)) {
+    // 수술명 칸이 비어 있고 content에만 묶여 들어간 행도 잡기 위해 두 칸을 같이 검색한다.
+    const pattern = candidate.replace(/["\\]/g, '');
     const params = new URLSearchParams({
-      select: 'category,table,surgery_name,surgery_class',
-      surgery_name: `ilike.*${candidate}*`,
+      select: 'category,table,surgery_name,surgery_class,content',
+      or: `(surgery_name.ilike."*${pattern}*",content.ilike."*${pattern}*")`,
       order: 'category.asc',
       limit: '30',
     });
@@ -56,10 +58,18 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
       headers: getSupabaseHeaders(),
     });
     if (!res.ok) continue; // 조회 실패 시 다음 후보로, 다 실패하면 벡터검색 경로로 폴백
-    const rows = await res.json();
+    const rows: Doc[] = await res.json();
     if (!rows.length) continue;
 
-    const lines = rows.map((r: Doc) => `${r.category}${r.table ? ' (' + r.table + ')' : ''}: ${r.surgery_name} → ${r.surgery_class}종 수술`);
+    // 수술명에서 직접 걸린 행을 먼저 보여준다.
+    const nameHit = (r: Doc) => Number(!!r.surgery_name?.includes(pattern));
+    rows.sort((a, b) => nameHit(b) - nameHit(a));
+
+    const lines = rows.map((r: Doc) => {
+      const where = `${r.category}${r.table ? ' (' + r.table + ')' : ''}`;
+      if (nameHit(r) && r.surgery_class) return `${where}: ${r.surgery_name} → ${r.surgery_class}종 수술`;
+      return `${where}: ${matchedSnippet(r.content || '', pattern)}`;
+    });
     return {
       answer: `[텍스트 매칭 결과, "${candidate}" 검색]\n` + lines.join('\n'),
       sources: rows.map((r: Doc) => ({ category: r.category, table: r.table, surgery_name: r.surgery_name, surgery_class: r.surgery_class })),
