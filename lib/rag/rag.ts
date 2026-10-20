@@ -83,13 +83,13 @@ async function trySimpleLookup(question: string): Promise<RagResult | null> {
 // 벡터검색 결과가 특정 보험사 쪽으로 쏠리는 걸 막기 위한 보험사 인지형 검색.
 // - 질문에 특정 보험사가 명시돼 있으면: 해당 보험사 문서만 필터링.
 // - "보험사별 비교"류 질문이면: 넉넉히 뽑은 뒤 보험사별로 라운드로빈해서 고르게 담는다.
-// - 그 외 일반 질문: 기존처럼 top-k 그대로.
+// - 보험사를 지정하지 않은 일반 질문: 같은 방식으로 전체 보험사에서 하나씩 골라 최대 10개.
 async function matchDocs(embedding: number[], question: string): Promise<Doc[]> {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const companies = detectCompanies(question);
-  const compareAll = isCompareAllIntent(question);
-  const needsWideFetch = companies.length > 0 || compareAll;
-  const matchCount = companies.length > 1 ? Math.min(100, companies.length * 30) : needsWideFetch ? 40 : 5;
+  // 보험사를 지정하지 않은 질문은 한 회사 문서가 상위권을 독차지하지 않도록 전체 보험사를 고르게 보여준다.
+  const compareAll = companies.length === 0 || isCompareAllIntent(question);
+  const matchCount = companies.length > 1 ? Math.min(100, companies.length * 30) : companies.length === 0 ? 100 : 40;
 
   const matchRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_surgery_docs`, {
     method: 'POST',
@@ -123,8 +123,6 @@ async function matchDocs(embedding: number[], question: string): Promise<Doc[]> 
       }
     }
     docs = rounded;
-  } else {
-    docs = docs.slice(0, 5);
   }
 
   return docs;
@@ -159,11 +157,11 @@ export async function ragQuery(question: string): Promise<RagResult> {
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + OPENAI_API_KEY },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 600,
+      max_tokens: 1000,
       messages: [
         {
           role: 'system',
-          content: `당신은 수술비 보험 약관 전문 AI 어시스턴트입니다. 아래 약관 데이터만 근거로 답변하세요. 수술 종수를 먼저 명시하고, 어느 보험사와 어느 표(참고 문서에 적힌 괄호 안 표 이름) 기준인지 정확히 밝히세요. 표 이름을 추측하지 말고 참고 문서에 적힌 그대로만 사용하세요. 3~5문장으로 답변하세요.\n\n[약관 데이터]\n${ctx}`,
+          content: `당신은 수술비 보험 약관 전문 AI 어시스턴트입니다. 아래 약관 데이터만 근거로 답변하세요. 수술 종수를 먼저 명시하고, 어느 보험사와 어느 표(참고 문서에 적힌 괄호 안 표 이름) 기준인지 정확히 밝히세요. 표 이름을 추측하지 말고 참고 문서에 적힌 그대로만 사용하세요. 여러 보험사 문서가 있으면 보험사별로 한 줄씩 정리하고, 한 보험사만 있으면 3~5문장으로 답변하세요.\n\n[약관 데이터]\n${ctx}`,
         },
         { role: 'user', content: question },
       ],
