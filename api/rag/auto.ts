@@ -19,6 +19,7 @@ interface AutoDoc {
 interface RagResult {
   answer: string;
   sources: Array<Record<string, any>>;
+  route?: 'text' | 'vector' | 'hybrid';
 }
 
 function supabaseHeaders() {
@@ -27,6 +28,78 @@ function supabaseHeaders() {
 }
 
 const toSource = (d: AutoDoc) => ({ section: d.section, title: d.title, grade: d.grade, amount: d.amount, page: d.page, similarity: d.similarity });
+
+// ── 전체 문서 캐시: 약 400건·5만 자라 한 번 받아 두고 글자 검색에 쓴다 (DB 구조 변경 없음) ──
+let docCache: { at: number; rows: AutoDoc[] } | null = null;
+const CACHE_MS = 10 * 60 * 1000;
+
+async function loadAllDocs(): Promise<AutoDoc[]> {
+  if (docCache && Date.now() - docCache.at < CACHE_MS) return docCache.rows;
+  const params = new URLSearchParams({
+    select: 'id,kind,section,title,grade,amount,item_no,page,content',
+    order: 'kind.desc,grade.asc,item_no.asc,id.asc',
+    limit: '2000',
+  });
+  const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/auto_documents?${params}`, { headers: supabaseHeaders() });
+  if (!res.ok) throw new Error('약관 목록 조회 실패 (' + res.status + ')');
+  const rows: AutoDoc[] = await res.json();
+  docCache = { at: Date.now(), rows };
+  return rows;
+}
+
+// 띄어쓰기·기호 차이를 무시하고 비교한다 ("대퇴골" ↔ "대퇴 골두", "감액비율" ↔ "감액 비율")
+const squash = (s: string) => s.replace(/[\s·・,.()（）\[\]「」｢｣"'“”‘’\-–—~]/g, '').toLowerCase();
+const stripHeader = (s: string) => s.replace(/^\[[^\]]+\]\s*/, '');
+
+// 질문에서 검색어 뽑기: 조사·어미를 떼고 2글자 이상만 남긴다
+const STOPWORDS = new Set([
+  'kb', 'kb손해보험', '자동차보험', '자보', '약관', '보험', '알려줘', '알려주세요', '설명해줘', '얼마', '얼마인가요', '얼마예요',
+  '무엇', '뭐야', '뭔가요', '어떻게', '어떤', '어떻게되나요', '있나요', '되나요', '인가요', '경우', '관련', '대해', '대한', '내용',
+]);
+const ENDINGS = /(입니까|인가요|인지요|이에요|예요|이야|인가|인지|나요|까요|해요|에서는|에게는|으로는|이라면|라면|에서|에게|으로|이란|란|하면|했을때|할때|되면|은|는|이|가|을|를|의|에|로|와|과|도|만)$/;
+
+function questionTerms(question: string): string[] {
+  const out: string[] = [];
+  for (const raw of question.replace(/[?？!.,~·「」"'()]/g, ' ').split(/\s+/)) {
+    let w = raw.trim().toLowerCase();
+    for (let i = 0; i < 2; i++) {
+      const cut = w.replace(ENDINGS, '');
+      if (cut !== w && cut.length >= 2) w = cut;
+    }
+    if (w.length >= 2 && !STOPWORDS.has(w)) out.push(squash(w));
+  }
+  return [...new Set(out)].filter(w => w.length >= 2);
+}
+
+// 글자 검색: 드문 단어일수록 가중치를 높게(IDF) 주고, 제목에 있으면 가산. 검색어가 2개 이상이면 2개 이상 겹쳐야 후보.
+function keywordSearch(question: string, all: AutoDoc[], limit = 5): AutoDoc[] {
+  const terms = questionTerms(question);
+  if (!terms.length) return [];
+  const bodies = all.map(d => squash(d.title + ' ' + stripHeader(d.content)));
+  const titles = all.map(d => squash(d.title));
+  const N = all.length;
+  const weights = terms.map(t => {
+    const df = bodies.filter(b => b.includes(t)).length;
+    return df ? Math.log(1 + N / df) : 0;
+  });
+  const need = Math.min(2, terms.filter((_, j) => weights[j] > 0).length);
+  if (!need) return [];
+
+  return all
+    .map((d, i) => {
+      let score = 0, hits = 0;
+      terms.forEach((t, j) => {
+        if (!bodies[i].includes(t)) return;
+        hits++;
+        score += weights[j] * (titles[i].includes(t) ? 1.5 : 1);
+      });
+      return { d, score, hits };
+    })
+    .filter(x => x.hits >= need)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(x => x.d);
+}
 
 // ── "OO 몇 급?" 단순 조회: 임베딩/LLM 없이 상해·후유장애 급수표에서 바로 찾는다 ──
 const GRADE_QUESTION = /몇\s*급|몇\s*등급|등급이?\s*(어떻게|뭐)/;
@@ -98,22 +171,19 @@ async function tryGradeLookup(question: string): Promise<RagResult | null> {
   if (!words.some(w => w.length >= 2)) return null;
   const attempts = [[term], words.length > 1 ? words : null].filter(Boolean) as string[][];
 
-  for (const ws of attempts) {
-    const params = new URLSearchParams({
-      select: 'id,kind,section,title,grade,amount,item_no,page,content',
-      kind: `in.(${kinds.join(',')})`,
-      order: 'kind.desc,grade.asc,item_no.asc',
-      limit: '40',
-    });
-    if (ws.length === 1) params.set('content', `ilike.*${ws[0]}*`);
-    else params.set('and', `(${ws.map(w => `content.ilike.*${w}*`).join(',')})`);
+  const all = await loadAllDocs().catch(() => null);
+  if (!all) return null;
+  const pool = all.filter(d => kinds.includes(d.kind));
 
-    const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/auto_documents?${params}`, { headers: supabaseHeaders() });
-    if (!res.ok) continue;
-    const rows: AutoDoc[] = await res.json();
+  for (const ws of attempts) {
+    const keys = ws.map(squash).filter(Boolean);
+    const rows = pool.filter(d => {
+      const body = squash(stripHeader(d.content));
+      return keys.every(k => body.includes(k));
+    }).slice(0, 40);
     if (!rows.length) continue;
 
-    return { answer: formatGradeList(ws, rows), sources: rows.map(toSource) };
+    return { answer: formatGradeList(ws, rows), sources: rows.map(toSource), route: 'text' };
   }
   return null;
 }
@@ -139,10 +209,16 @@ async function ragQuery(question: string): Promise<RagResult> {
   const matchRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/match_auto_docs`, {
     method: 'POST',
     headers: supabaseHeaders(),
-    body: JSON.stringify({ query_embedding: embedding, match_count: 8, filter_kind: null }),
+    body: JSON.stringify({ query_embedding: embedding, match_count: 10, filter_kind: null }),
   });
   if (!matchRes.ok) throw new Error('검색 실패 (' + matchRes.status + '): ' + (await matchRes.text()));
-  const docs: AutoDoc[] = await matchRes.json();
+  const vectorDocs: AutoDoc[] = await matchRes.json();
+
+  // 짧은 질문은 의미 검색만으로 핵심 조항(예: 별표4 동승자 감액비율)을 놓칠 수 있어, 글자 검색 결과를 앞에 붙인다.
+  const all = await loadAllDocs().catch(() => [] as AutoDoc[]);
+  const keywordDocs = keywordSearch(question, all, 5);
+  const seen = new Set<string>();
+  const docs = [...keywordDocs, ...vectorDocs].filter(d => (seen.has(d.id) ? false : (seen.add(d.id), true))).slice(0, 14);
   if (!docs.length) return { answer: '관련 약관 데이터를 찾을 수 없습니다.', sources: [] };
 
   const ctx = docs.map((d, i) => `[참고${i + 1}] ${d.title} (약관 ${d.page}쪽)\n${d.content}`).join('\n\n---\n\n');
@@ -174,7 +250,7 @@ async function ragQuery(question: string): Promise<RagResult> {
   if (!chatRes.ok) throw new Error('답변 생성 실패: ' + (await chatRes.text()));
   const answer = (await chatRes.json()).choices[0].message.content;
 
-  return { answer, sources: docs.map(toSource) };
+  return { answer, sources: docs.map(toSource), route: keywordDocs.length ? 'hybrid' : 'vector' };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

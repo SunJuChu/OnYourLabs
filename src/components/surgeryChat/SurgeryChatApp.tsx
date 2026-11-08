@@ -25,7 +25,7 @@ interface ChatMessage {
   text: string;
   sources?: Source[];
   isError?: boolean;
-  route?: 'text' | 'vector';
+  route?: 'text' | 'vector' | 'hybrid';
   lookupError?: string;
 }
 
@@ -219,7 +219,7 @@ export default function SurgeryChatApp() {
               {m.sources && m.sources.length > 0 && (
                 <div className="mt-2 pt-2 border-t border-slate-200/70 text-[10px] text-slate-500 font-semibold space-y-0.5">
                   <p className="text-slate-400 font-bold">
-                    참고 문서{m.route ? (m.route === 'text' ? ' · 글자 검색' : ' · 의미 검색') : ''}
+                    참고 문서{m.route ? (m.route === 'text' ? ' · 글자 검색' : m.route === 'hybrid' ? ' · 글자+의미 검색' : ' · 의미 검색') : ''}
                   </p>
                   {m.lookupError && <p className="text-rose-400">글자 검색 실패: {m.lookupError}</p>}
                   {m.sources.slice(0, 10).map((s, si) => (
