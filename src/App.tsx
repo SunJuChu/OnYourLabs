@@ -81,7 +81,7 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
 
   // General Filter States
-  const [selectedCategory, setSelectedCategory] = useState<'all' | '생명보험' | '손해보험' | '교육자료'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | '생명보험' | '손해보험' | '교육자료' | '소식지'>('all');
   const [selectedInsurer, setSelectedInsurer] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   
@@ -318,7 +318,10 @@ export default function App() {
   const filteredFiles = useMemo(() => {
     return activeFiles.filter(file => {
       // 1. Category Filter
-      if (selectedCategory !== 'all' && file.folder !== selectedCategory) {
+      // '소식지'는 보험사 소식지(생명보험·손해보험 폴더)를 모아 보고, 교육자료는 뺀다
+      if (selectedCategory === '소식지') {
+        if (file.folder !== '생명보험' && file.folder !== '손해보험') return false;
+      } else if (selectedCategory !== 'all' && file.folder !== selectedCategory) {
         return false;
       }
       // 2. Insurer Filter

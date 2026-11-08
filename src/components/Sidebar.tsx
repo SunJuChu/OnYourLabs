@@ -29,8 +29,8 @@ interface SidebarProps {
   googleUser: GoogleUser | null;
   onGoogleSignIn: () => void;
   onGoogleSignOut: () => void;
-  selectedCategory: 'all' | '생명보험' | '손해보험' | '교육자료';
-  setSelectedCategory: (cat: 'all' | '생명보험' | '손해보험' | '교육자료') => void;
+  selectedCategory: 'all' | '생명보험' | '손해보험' | '교육자료' | '소식지';
+  setSelectedCategory: (cat: 'all' | '생명보험' | '손해보험' | '교육자료' | '소식지') => void;
   selectedInsurer: string;
   setSelectedInsurer: (insurer: string) => void;
   searchTerm: string;
@@ -351,6 +351,7 @@ export default function Sidebar({
                 { value: '생명보험', label: '생명보험', icon: '🧬' },
                 { value: '손해보험', label: '손해보험', icon: '🛡️' },
                 { value: '교육자료', label: '교육자료', icon: '📚' },
+                { value: '소식지', label: '소식지', icon: '📰' },
               ] as const).map(cat => (
                 <button
                   key={cat.value}
@@ -364,9 +365,8 @@ export default function Sidebar({
                   {cat.icon} {cat.label}
                 </button>
               ))}
-              {/* 준비중 항목 */}
+              {/* 준비중 항목 (교안은 저작권 확인 전까지 닫아 둠) */}
               {[
-                { label: '소식지', icon: '📰' },
                 { label: '교안', icon: '📖' },
               ].map(item => (
                 <button
